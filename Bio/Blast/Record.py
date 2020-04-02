@@ -26,7 +26,14 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
 
 
-class Header(object):
+def fmt_(value, format_spec="%s", default_str="<unknown>"):
+    """Ensure the given value formats to a string correctly."""
+    if value is None:
+        return default_str
+    return format_spec % value
+
+
+class Header:
     """Saves information from a blast header.
 
     Members:
@@ -46,20 +53,20 @@ class Header(object):
 
     def __init__(self):
         """Initialize the class."""
-        self.application = ''
-        self.version = ''
-        self.date = ''
-        self.reference = ''
+        self.application = ""
+        self.version = ""
+        self.date = ""
+        self.reference = ""
 
-        self.query = ''
+        self.query = ""
         self.query_letters = None
 
-        self.database = ''
+        self.database = ""
         self.database_sequences = None
         self.database_letters = None
 
 
-class Description(object):
+class Description:
     """Stores information about one hit in the descriptions section.
 
     Members:
@@ -72,17 +79,59 @@ class Description(object):
 
     def __init__(self):
         """Initialize the class."""
-        self.title = ''
+        self.title = ""
         self.score = None
         self.bits = None
         self.e = None
         self.num_alignments = None
 
     def __str__(self):
+        """Return the description as a string."""
         return "%-66s %5s  %s" % (self.title, self.score, self.e)
 
 
-class Alignment(object):
+class DescriptionExt(Description):
+    """Extended description record for BLASTXML version 2.
+
+    Members:
+    items           List of DescriptionExtItem
+    """
+
+    def __init__(self):
+        """Initialize the class."""
+        super().__init__()
+
+        self.items = []
+
+    def append_item(self, item):
+        """Add a description extended record."""
+        if len(self.items) == 0:
+            self.title = str(item)
+        self.items.append(item)
+
+
+class DescriptionExtItem:
+    """Stores information about one record in hit description for BLASTXML version 2.
+
+    Members:
+    id              Database identifier
+    title           Title of the hit.
+    """
+
+    def __init__(self):
+        """Initialize the class."""
+        self.id = None
+        self.title = None
+        self.accession = None
+        self.taxid = None
+        self.sciname = None
+
+    def __str__(self):
+        """Return the description identifier and title as a string."""
+        return "%s %s" % (self.id, self.title)
+
+
+class Alignment:
     """Stores information about one hit in the alignments section.
 
     Members:
@@ -96,19 +145,20 @@ class Alignment(object):
 
     def __init__(self):
         """Initialize the class."""
-        self.title = ''
-        self.hit_id = ''
-        self.hit_def = ''
+        self.title = ""
+        self.hit_id = ""
+        self.hit_def = ""
         self.length = None
         self.hsps = []
 
     def __str__(self):
-        lines = self.title.split('\n')
+        """Return the BLAST alignment as a formatted string."""
+        lines = self.title.split("\n")
         lines.append("Length = %s\n" % self.length)
-        return '\n           '.join(lines)
+        return "\n           ".join(lines)
 
 
-class HSP(object):
+class HSP:
     """Stores information about one hsp in an alignment hit.
 
     Members:
@@ -170,44 +220,63 @@ class HSP(object):
         self.strand = (None, None)
         self.frame = ()
 
-        self.query = ''
+        self.query = ""
         self.query_start = None
         self.query_end = None
-        self.match = ''
-        self.sbjct = ''
+        self.match = ""
+        self.sbjct = ""
         self.sbjct_start = None
         self.sbjct_end = None
 
     def __str__(self):
-        lines = ["Score %i (%i bits), expectation %0.1e, alignment length %i"
-                 % (self.score, self.bits, self.expect, self.align_length)]
+        """Return the BLAST HSP as a formatted string."""
+        lines = [
+            "Score %s (%s bits), expectation %s, alignment length %s"
+            % (
+                fmt_(self.score, "%i"),
+                fmt_(self.bits, "%i"),
+                fmt_(self.expect, "%0.1e"),
+                fmt_(self.align_length, "%i"),
+            )
+        ]
+        if self.align_length is None:
+            return "\n".join(lines)
         if self.align_length < 50:
-            lines.append("Query:%s %s %s" % (str(self.query_start).rjust(8),
-                                             str(self.query),
-                                             str(self.query_end)))
-            lines.append("               %s"
-                         % (str(self.match)))
-            lines.append("Sbjct:%s %s %s" % (str(self.sbjct_start).rjust(8),
-                                             str(self.sbjct),
-                                             str(self.sbjct_end)))
+            lines.append(
+                "Query:%s %s %s"
+                % (str(self.query_start).rjust(8), str(self.query), str(self.query_end))
+            )
+            lines.append("               %s" % (str(self.match)))
+            lines.append(
+                "Sbjct:%s %s %s"
+                % (str(self.sbjct_start).rjust(8), str(self.sbjct), str(self.sbjct_end))
+            )
         else:
-            lines.append("Query:%s %s...%s %s"
-                         % (str(self.query_start).rjust(8),
-                            str(self.query)[:45],
-                            str(self.query)[-3:],
-                            str(self.query_end)))
-            lines.append("               %s...%s"
-                         % (str(self.match)[:45],
-                            str(self.match)[-3:]))
-            lines.append("Sbjct:%s %s...%s %s"
-                         % (str(self.sbjct_start).rjust(8),
-                            str(self.sbjct)[:45],
-                            str(self.sbjct)[-3:],
-                            str(self.sbjct_end)))
+            lines.append(
+                "Query:%s %s...%s %s"
+                % (
+                    str(self.query_start).rjust(8),
+                    str(self.query)[:45],
+                    str(self.query)[-3:],
+                    str(self.query_end),
+                )
+            )
+            lines.append(
+                "               %s...%s" % (str(self.match)[:45], str(self.match)[-3:])
+            )
+            lines.append(
+                "Sbjct:%s %s...%s %s"
+                % (
+                    str(self.sbjct_start).rjust(8),
+                    str(self.sbjct)[:45],
+                    str(self.sbjct)[-3:],
+                    str(self.sbjct_end),
+                )
+            )
         return "\n".join(lines)
 
 
-class MultipleAlignment(object):
+class MultipleAlignment:
     """Holds information about a multiple alignment.
 
     Members:
@@ -240,7 +309,7 @@ class MultipleAlignment(object):
         parse_number = 0
         n = 0
         for name, start, seq, end in self.alignment:
-            if name == 'QUERY':  # QUERY is the first in each alignment block
+            if name == "QUERY":  # QUERY is the first in each alignment block
                 parse_number += 1
                 n = 0
 
@@ -258,7 +327,7 @@ class MultipleAlignment(object):
         return generic
 
 
-class Round(object):
+class Round:
     """Holds information from a PSI-BLAST round.
 
     Members:
@@ -278,7 +347,7 @@ class Round(object):
         self.multiple_alignment = None
 
 
-class DatabaseReport(object):
+class DatabaseReport:
     """Holds information about a database report.
 
     Members:
@@ -303,7 +372,7 @@ class DatabaseReport(object):
         self.ka_params_gap = (None, None, None)
 
 
-class Parameters(object):
+class Parameters:
     """Holds information about the parameters.
 
     Members:
@@ -339,7 +408,7 @@ class Parameters(object):
 
     def __init__(self):
         """Initialize the class."""
-        self.matrix = ''
+        self.matrix = ""
         self.gap_penalties = (None, None)
         self.sc_match = None
         self.sc_mismatch = None

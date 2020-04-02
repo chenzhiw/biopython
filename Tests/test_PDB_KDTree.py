@@ -4,9 +4,10 @@
 # Converted by Eric Talevich from an older unit test copyright 2002
 # by Thomas Hamelryck.
 #
-# This code is part of the Biopython distribution and governed by its
-# license. Please see the LICENSE file that should have been included
-# as part of this package.
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
 
 """Unit tests for those parts of the Bio.PDB module using Bio.KDTree."""
 
@@ -17,27 +18,27 @@ try:
     from numpy.random import random
 except ImportError:
     from Bio import MissingExternalDependencyError
-    raise MissingExternalDependencyError(
-        "Install NumPy if you want to use Bio.PDB.")
+
+    raise MissingExternalDependencyError("Install NumPy if you want to use Bio.PDB.") from None
 
 try:
     from Bio.PDB import kdtrees
 except ImportError:
     from Bio import MissingExternalDependencyError
-    raise MissingExternalDependencyError(
-        "C module Bio.PDB.kdtrees not compiled")
+
+    raise MissingExternalDependencyError("C module Bio.PDB.kdtrees not compiled") from None
 
 from Bio.PDB.NeighborSearch import NeighborSearch
 
 
 class NeighborTest(unittest.TestCase):
-
     def test_neighbor_search(self):
         """NeighborSearch: Find nearby randomly generated coordinates.
 
         Based on the self test in Bio.PDB.NeighborSearch.
         """
-        class RandomAtom(object):
+        # This comment stops black style adding a blank line here, which causes flake8 D202.
+        class RandomAtom:
             def __init__(self):
                 self.coord = 100 * random(3)
 
@@ -60,10 +61,10 @@ class NeighborTest(unittest.TestCase):
 
 class KDTreeTest(unittest.TestCase):
 
-    nr_points = 5000     # number of points used in test
-    bucket_size = 5      # number of points per tree node
-    radius = 0.05        # radius of search (typically 0.05 or so)
-    query_radius = 10    # radius of search
+    nr_points = 5000  # number of points used in test
+    bucket_size = 5  # number of points per tree node
+    radius = 0.05  # radius of search (typically 0.05 or so)
+    query_radius = 10  # radius of search
 
     def test_KDTree_exceptions(self):
         bucket_size = self.bucket_size
@@ -72,10 +73,13 @@ class KDTreeTest(unittest.TestCase):
         coords = random((nr_points, 3)) * 100000000000000
         with self.assertRaises(Exception) as context:
             kdt = kdtrees.KDTree(coords, bucket_size)
-        self.assertTrue("coordinate values should lie between -1e6 and 1e6" in str(context.exception))
+        self.assertIn(
+            "coordinate values should lie between -1e6 and 1e6",
+            str(context.exception)
+        )
         with self.assertRaises(Exception) as context:
             kdt = kdtrees.KDTree(random((nr_points, 3 - 2)), bucket_size)
-        self.assertTrue("expected a Nx3 numpy array" in str(context.exception))
+        self.assertIn("expected a Nx3 numpy array", str(context.exception))
 
     def test_KDTree_point_search(self):
         """Test searching all points within a certain radius of center.
@@ -92,7 +96,7 @@ class KDTreeTest(unittest.TestCase):
                 center = random(3)
                 kdt = kdtrees.KDTree(coords, bucket_size)
                 points1 = kdt.search(center, radius)
-                points1.sort(key=lambda point: point.index)
+                points1.sort(key=lambda point: point.index)  # noqa: E731
                 # manual search
                 points2 = []
                 for i in range(0, nr_points):
@@ -127,7 +131,7 @@ class KDTreeTest(unittest.TestCase):
             neighbors2 = kdt.neighbor_simple_search(radius)
             # compare results
             self.assertEqual(len(neighbors1), len(neighbors2))
-            key = lambda neighbor: (neighbor.index1, neighbor.index2)
+            key = lambda neighbor: (neighbor.index1, neighbor.index2)  # noqa: E731
             neighbors1.sort(key=key)
             neighbors2.sort(key=key)
             for neighbor1, neighbor2 in zip(neighbors1, neighbors2):
@@ -170,7 +174,7 @@ class KDTreeTest(unittest.TestCase):
                             neighbor = kdtrees.Neighbor(i1, i2, r)
                             neighbors2.append(neighbor)
                 self.assertEqual(len(neighbors1), len(neighbors2))
-                key = lambda neighbor: (neighbor.index1, neighbor.index2)
+                key = lambda neighbor: (neighbor.index1, neighbor.index2)  # noqa: E731
                 neighbors1.sort(key=key)
                 neighbors2.sort(key=key)
                 for neighbor1, neighbor2 in zip(neighbors1, neighbors2):
@@ -179,6 +183,6 @@ class KDTreeTest(unittest.TestCase):
                     self.assertAlmostEqual(neighbor1.radius, neighbor2.radius)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     runner = unittest.TextTestRunner(verbosity=2)
     unittest.main(testRunner=runner)

@@ -1,11 +1,12 @@
 # Copyright (C) 2004, Thomas Hamelryck (thamelry@binf.ku.dk)
-# This code is part of the Biopython distribution and governed by its
-# license.  Please see the LICENSE file that should have been included
-# as part of this package.
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
 
 """Vector class, including rotation-related functions."""
 
-from __future__ import print_function
 
 import numpy
 
@@ -13,15 +14,25 @@ import numpy
 def m2rotaxis(m):
     """Return angles, axis pair that corresponds to rotation matrix m.
 
-    The case where `m` is the identity matrix corresponds to a singularity where any
-    rotation axis is valid. In that case, `Vector([1,0,0])`, is returned.
+    The case where ``m`` is the identity matrix corresponds to a singularity
+    where any rotation axis is valid. In that case, ``Vector([1, 0, 0])``,
+    is returned.
     """
     eps = 1e-5
 
     # Check for singularities a la http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/
-    if abs(m[0, 1] - m[1, 0]) < eps and abs(m[0, 2] - m[2, 0]) < eps and abs(m[1, 2] - m[2, 1]) < eps:
+    if (
+        abs(m[0, 1] - m[1, 0]) < eps
+        and abs(m[0, 2] - m[2, 0]) < eps
+        and abs(m[1, 2] - m[2, 1]) < eps
+    ):
         # Singularity encountered. Check if its 0 or 180 deg
-        if abs(m[0, 1] + m[1, 0]) < eps and abs(m[0, 2] + m[2, 0]) < eps and abs(m[1, 2] + m[2, 1]) < eps and abs(m[0, 0] + m[1, 1] + m[2, 2] - 3) < eps:
+        if (
+            abs(m[0, 1] + m[1, 0]) < eps
+            and abs(m[0, 2] + m[2, 0]) < eps
+            and abs(m[1, 2] + m[2, 1]) < eps
+            and abs(m[0, 0] + m[1, 1] + m[2, 2] - 3) < eps
+        ):
             angle = 0
         else:
             angle = numpy.pi
@@ -101,8 +112,12 @@ def rotaxis2m(theta, vector):
 
     Examples
     --------
-    >>> m = rotaxis(pi, Vector(1, 0, 0))
-    >>> rotated_vector = any_vector.left_multiply(m)
+    >>> from numpy import pi
+    >>> from Bio.PDB.vectors import rotaxis2m
+    >>> from Bio.PDB.vectors import Vector
+    >>> m = rotaxis2m(pi, Vector(1, 0, 0))
+    >>> Vector(1, 2, 3).left_multiply(m)
+    <Vector 1.00, -2.00, -3.00>
 
     """
     vector = vector.normalized()
@@ -137,10 +152,14 @@ def refmat(p, q):
 
     Examples
     --------
+    >>> from Bio.PDB.vectors import refmat
+    >>> p, q = Vector(1, 2, 3), Vector(2, 3, 5)
     >>> mirror = refmat(p, q)
     >>> qq = p.left_multiply(mirror)
     >>> print(q)
-    >>> print(qq)  # q and qq should be the same
+    <Vector 2.00, 3.00, 5.00>
+    >>> print(qq)
+    <Vector 1.21, 1.82, 3.03>
 
     """
     p = p.normalized()
@@ -170,9 +189,15 @@ def rotmat(p, q):
 
     Examples
     --------
+    >>> from Bio.PDB.vectors import rotmat
+    >>> p, q = Vector(1, 2, 3), Vector(2, 3, 5)
     >>> r = rotmat(p, q)
     >>> print(q)
-    >>> print(p.left_multiply(r))
+    <Vector 2.00, 3.00, 5.00>
+    >>> print(p)
+    <Vector 1.00, 2.00, 3.00>
+    >>> p.left_multiply(r)
+    <Vector 1.21, 1.82, 3.03>
 
     """
     rot = numpy.dot(refmat(q, -p), refmat(p, -p))
@@ -223,7 +248,7 @@ def calc_dihedral(v1, v2, v3, v4):
     return angle
 
 
-class Vector(object):
+class Vector:
     """3D vector."""
 
     def __init__(self, x, y=None, z=None):
@@ -231,14 +256,14 @@ class Vector(object):
         if y is None and z is None:
             # Array, list, tuple...
             if len(x) != 3:
-                raise ValueError("Vector: x is not a "
-                                 "list/tuple/array of 3 numbers")
-            self._ar = numpy.array(x, 'd')
+                raise ValueError("Vector: x is not a list/tuple/array of 3 numbers")
+            self._ar = numpy.array(x, "d")
         else:
             # Three numbers
-            self._ar = numpy.array((x, y, z), 'd')
+            self._ar = numpy.array((x, y, z), "d")
 
     def __repr__(self):
+        """Return vector 3D coordinates."""
         x, y, z = self._ar
         return "<Vector %.2f, %.2f, %.2f>" % (x, y, z)
 
@@ -267,7 +292,7 @@ class Vector(object):
         """Return Vector.Vector (dot product)."""
         return sum(self._ar * other._ar)
 
-    def __div__(self, x):
+    def __truediv__(self, x):
         """Return Vector(coords/a)."""
         a = self._ar / numpy.array(x)
         return Vector(a)
@@ -286,12 +311,15 @@ class Vector(object):
             return Vector(a)
 
     def __getitem__(self, i):
+        """Return value of array index i."""
         return self._ar[i]
 
     def __setitem__(self, i, value):
+        """Assign values to array index i."""
         self._ar[i] = value
 
     def __contains__(self, i):
+        """Validate if i is in array."""
         return i in self._ar
 
     def norm(self):
@@ -305,8 +333,9 @@ class Vector(object):
     def normalize(self):
         """Normalize the Vector object.
 
-        Changes the state of `self` and doesn't return a value. If you need to chain function
-        calls or create a new object use the `normalized` method.
+        Changes the state of ``self`` and doesn't return a value.
+        If you need to chain function calls or create a new object
+        use the ``normalized`` method.
         """
         if self.norm():
             self._ar = self._ar / self.norm()
@@ -314,7 +343,7 @@ class Vector(object):
     def normalized(self):
         """Return a normalized copy of the Vector.
 
-        To avoid allocating new objects use the `normalize` method.
+        To avoid allocating new objects use the ``normalize`` method.
         """
         v = self.copy()
         v.normalize()

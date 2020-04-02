@@ -1,13 +1,13 @@
-subdirs := install
+subdirs :=
 
 
 all:  Tutorial.html Tutorial.txt pdf $(subdirs)
 pdf:  Tutorial.pdf biopdb_faq.pdf
 
 Tutorial.pdf: Tutorial.tex Tutorial/chapter_*.tex
-	pdflatex Tutorial.tex
-	pdflatex Tutorial.tex
-	pdflatex Tutorial.tex
+	pdflatex --shell-escape Tutorial.tex
+	pdflatex --shell-escape Tutorial.tex
+	pdflatex --shell-escape Tutorial.tex
 
 biopdb_faq.pdf: biopdb_faq.tex
 	pdflatex biopdb_faq.tex

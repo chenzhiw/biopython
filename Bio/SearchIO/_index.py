@@ -8,9 +8,8 @@
 
 """Custom indexing for Bio.SearchIO objects."""
 
-from Bio._py3k import StringIO
-from Bio._py3k import _bytes_to_string
-from Bio import bgzf
+from io import StringIO
+
 from Bio.File import _IndexedSeqFileProxy, _open_for_random_access
 
 
@@ -27,7 +26,9 @@ class SearchIndexer(_IndexedSeqFileProxy):
         self._kwargs = kwargs
 
     def _parse(self, handle):
+        """Pass handle and arguments to the next iterable (PRIVATE)."""
         return next(iter(self._parser(handle, **self._kwargs)))
 
     def get(self, offset):
-        return self._parse(StringIO(_bytes_to_string(self.get_raw(offset))))
+        """Get offset and convert it from bytes to string."""
+        return self._parse(StringIO(self.get_raw(offset).decode()))

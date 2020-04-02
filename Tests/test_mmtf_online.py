@@ -4,6 +4,8 @@
 # Please see the LICENSE file that should have been included as part of this
 # package.
 
+"""Tests for mmtf online module."""
+
 import unittest
 import warnings
 
@@ -21,9 +23,9 @@ class OnlineMMTF(unittest.TestCase):
         """Check parser can fetch a record from its PDB ID."""
         parser = MMTFParser()
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', PDBConstructionWarning)
+            warnings.simplefilter("ignore", PDBConstructionWarning)
             struct = parser.get_structure_from_url("4ZHL")
-        atoms = [x for x in struct.get_atoms()]
+        atoms = list(struct.get_atoms())
         self.assertEqual(len(atoms), 2080)
 
 

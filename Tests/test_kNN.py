@@ -6,6 +6,8 @@
 # See the Biopython Tutorial for an explanation of the biological
 # background of these tests.
 
+"""Tests for kNN module."""
+
 import unittest
 
 try:
@@ -16,7 +18,7 @@ try:
 except ImportError:
     from Bio import MissingPythonDependencyError
     raise MissingPythonDependencyError(
-        "Install NumPy if you want to use Bio.kNN.")
+        "Install NumPy if you want to use Bio.kNN.") from None
 
 from Bio import kNN
 
@@ -62,7 +64,7 @@ class TestKNN(unittest.TestCase):
     def test_calculate_model(self):
         k = 3
         model = kNN.train(xs, ys, k)
-        self.assertEqual(model.classes, set([0, 1]))
+        self.assertEqual(model.classes, {0, 1})
         n = len(xs)
         for i in range(n):
             self.assertAlmostEqual(model.xs[i, 0], xs[i][0], places=4)

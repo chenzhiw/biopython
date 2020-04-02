@@ -1,8 +1,8 @@
 # Copyright 1999 by Jeffrey Chang.  All rights reserved.
-# This code is part of the Biopython distribution and governed by its
-# license.  Please see the LICENSE file that should have been included
-# as part of this package.
-
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
 """Code to parse the keywlist.txt file from SwissProt/UniProt.
 
 See:
@@ -18,8 +18,6 @@ Functions:
    the records it contains.
 
 """
-
-from __future__ import print_function
 
 
 class Record(dict):
@@ -53,6 +51,11 @@ class Record(dict):
 
 
 def parse(handle):
+    """Parse the keyword list from file handle.
+
+    Returns a generator object which yields keyword entries as
+    Bio.SwissProt.KeyWList.Record() object.
+    """
     record = Record()
     # First, skip the header - look for start of a record
     for line in handle:

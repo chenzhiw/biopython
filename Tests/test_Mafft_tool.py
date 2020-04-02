@@ -11,16 +11,17 @@ from Bio import MissingExternalDependencyError
 from Bio.Align.Applications import MafftCommandline
 
 # Try to avoid problems when the OS is in another language
-os.environ['LANG'] = 'C'
+os.environ["LANG"] = "C"
 
 mafft_exe = None
 if sys.platform == "win32":
     raise MissingExternalDependencyError("Testing with MAFFT not implemented on Windows yet")
 else:
-    from Bio._py3k import getoutput
+    from subprocess import getoutput
     output = getoutput("mafft -help")
-    if "not found" not in output and "MAFFT" in output:
-        mafft_exe = "mafft"
+    if "not found" not in output and "not recognized" not in output:
+        if "MAFFT" in output:
+            mafft_exe = "mafft"
 if not mafft_exe:
     raise MissingExternalDependencyError(
         "Install MAFFT if you want to use the Bio.Align.Applications wrapper.")
@@ -37,7 +38,7 @@ def check_mafft_version(mafft_exe):
     return_code = child.returncode
     del child
     if "correctly installed?" in output \
-    or "mafft binaries have to be installed" in output:
+       or "mafft binaries have to be installed" in output:
         raise MissingExternalDependencyError(
             "MAFFT does not seem to be correctly installed.")
 
@@ -117,10 +118,10 @@ class MafftApplication(unittest.TestCase):
             self.assertTrue(stdoutdata.startswith(" 3 68") or
                             stdoutdata.startswith(" 3 69") or
                             stdoutdata.startswith(" 3 70"), stdoutdata)
-            self.assertTrue("gi|1348912 " in stdoutdata,
-                            stdoutdata)
-            self.assertTrue("gi|1348912|gb|G26680|G26680" not in stdoutdata,
-                            stdoutdata)
+            self.assertIn("gi|1348912 ", stdoutdata,
+                          stdoutdata)
+            self.assertNotIn("gi|1348912|gb|G26680|G26680", stdoutdata,
+                             stdoutdata)
             self.assertNotIn("$#=0", stderrdata)
 
         def test_Mafft_with_PHYLIP_namelength(self):
@@ -133,8 +134,8 @@ class MafftApplication(unittest.TestCase):
             self.assertTrue(stdoutdata.startswith(" 3 68") or
                             stdoutdata.startswith(" 3 69") or
                             stdoutdata.startswith(" 3 70"), stdoutdata)
-            self.assertTrue("gi|1348912|gb|G26680|G26680" in stdoutdata,
-                            stdoutdata)
+            self.assertIn("gi|1348912|gb|G26680|G26680", stdoutdata,
+                          stdoutdata)
             self.assertNotIn("$#=0", stderrdata)
 
     def test_Mafft_with_complex_command_line(self):

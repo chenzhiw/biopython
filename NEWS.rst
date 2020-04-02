@@ -3,13 +3,309 @@ News for the Biopython Project
 
 This file contains release notes and general news about the Biopython project.
 See also the DEPRECATED file which tracks the removal of obsolete modules or
-functions, and online http://biopython.org/wiki/News and
-http://news.open-bio.org/news/category/obf-projects/biopython/
+functions, and online https://biopython.org/wiki/News and
+https://www.open-bio.org/category/obf-projects/biopython/
 
 The latest news is at the top of this file.
 
-(In progress, not yet released) Biopython 1.73
-==============================================
+(In progress, not yet released): Biopython 1.77
+===============================================
+
+This release of Biopython supports Python 3.6, 3.7 and 3.8 It has also been
+tested on PyPy3.6.1 v7.1.1-beta0.
+
+**We have dropped support for Python 2 now.**
+
+``pairwise2`` now allows the input of parameters with keywords and returns the
+alignments as a list of ``namedtuples``.
+
+The codon tables have been updated to NCBI genetic code table version 4.5,
+which adds Cephalodiscidae mitochondrial as table 33.
+
+Updated ``Bio.Restriction`` to the January 2020 release of REBASE.
+
+As in recent releases, more of our code is now explicitly available under
+either our original "Biopython License Agreement", or the very similar but
+more commonly used "3-Clause BSD License".  See the ``LICENSE.rst`` file for
+more details.
+
+Additionally, a number of small bugs and typos have been fixed with further
+additions to the test suite. There has been further work to follow the Python
+PEP8, PEP257 and best practice standard coding style, and more of the code
+style has been reformatted with the ``black`` tool.
+
+Many thanks to the Biopython developers and community for making this release
+possible, especially the following contributors:
+
+- Alexander Decurnou (first contribution)
+- Andrei Istrate (first contribution)
+- Andrey Raspopov
+- Austin Varela (first contribution)
+- Chris Rands
+- Deepak Khatri
+- Hielke Walinga (first contribution)
+- Kai Blin
+- Markus Piotrowski
+- Peter Cock
+- Rob Miller
+- Sergio Valqui
+- Sujan Dulal (first contribution)
+- Tianyi Shi (first contribution)
+
+20 December 2019: Biopython 1.76
+================================
+
+This release of Biopython supports Python 2.7, 3.5, 3.6, 3.7 and 3.8. It has
+also been tested on PyPy2.7.13 v7.1.1 and PyPy3.6.1 v7.1.1-beta0.
+
+We intend this to be our final release supporting Python 2.7 and 3.5.
+
+As in recent releases, more of our code is now explicitly available under
+either our original "Biopython License Agreement", or the very similar but
+more commonly used "3-Clause BSD License".  See the ``LICENSE.rst`` file for
+more details.
+
+
+``PDBParser`` and ``PDBIO`` now support PQR format file parsing and input/
+output.
+
+In addition to the mainstream ``x86_64`` aka ``AMD64`` CPU architecture, we
+now also test every contribution on the ``ARM64``, ``ppc64le``, and ``s390x``
+CPUs under Linux thanks to Travis CI. Further post-release testing done by
+Debian and other packagers and distributors of Biopython also covers these
+CPUs.
+
+``Bio.motifs.PositionSpecificScoringMatrix.search()`` method has been
+re-written: it now applies ``.calculate()`` to chunks of the sequence
+to maintain a low memory footprint for long sequences.
+
+Additionally, a number of small bugs and typos have been fixed with further
+additions to the test suite. There has been further work to follow the Python
+PEP8, PEP257 and best practice standard coding style, and more of the code
+style has been reformatted with the ``black`` tool.
+
+Many thanks to the Biopython developers and community for making this release
+possible, especially the following contributors:
+
+- Andrey Raspopov
+- Chris Daley (first contribution)
+- Chris Rands
+- Artemi Bendandi (first contribution)
+- Christian Brueffer
+- Deepak Khatri
+- Ilya Flyamer (first contribution)
+- Jakub Lipinski (first contribution)
+- Michael R. Crusoe (first contribution)
+- Michiel de Hoon
+- Peter Cock
+- Chris Daley (first contribution)
+- Michiel de Hoon
+- Jakub Lipinski (first contribution)
+- Sergio Valqui
+- Konstantinos Zisis (first contribution)
+
+6 November 2019: Biopython 1.75
+===============================
+
+This release of Biopython supports Python 2.7, 3.5, 3.6, 3.7 and is expected
+to work on the soon to be released Python 3.8. It has also been tested on
+PyPy2.7.13 v7.1.1 and PyPy3.6.1 v7.1.1-beta0.
+
+Note we intend to drop Python 2.7 support in early 2020.
+
+The restriction enzyme list in Bio.Restriction has been updated to the August
+2019 release of REBASE.
+
+``Bio.SeqIO`` now supports reading and writing files in the native format of
+Christian Marck's DNA Strider program ("xdna" format, also used by Serial
+Cloner), as well as reading files in the native formats of GSL Biotech's
+SnapGene ("snapgene") and Textco Biosoftware's Gene Construction Kit ("gck").
+
+``Bio.AlignIO`` now supports GCG MSF multiple sequence alignments as the "msf"
+format (work funded by the National Marrow Donor Program).
+
+The main ``Seq`` object now has string-like ``.index()`` and ``.rindex()``
+methods, matching the existing ``.find()`` and ``.rfind()`` implementations.
+The ``MutableSeq`` object retains its more list-like ``.index()`` behaviour.
+
+The ``MMTFIO`` class has been added that allows writing of MMTF file format
+files from a Biopython structure object. ``MMTFIO`` has a similar interface to
+``PDBIO`` and ``MMCIFIO``, including the use of a ``Select`` class to write
+out a specified selection. This final addition to read/write support for
+PDB/mmCIF/MMTF in Biopython allows conversion between all three file formats.
+
+Values from mmCIF files are now read in as a list even when they consist of a
+single value. This change improves consistency and reduces the likelihood of
+making an error, but will require user code to be updated accordingly.
+
+`Bio.motifs.meme` has been updated to parse XML output files from MEME over
+the plain-text output file. The goal of this change is to parse a more
+structured data source with minimal loss of functionality upon future MEME
+releases.
+
+``Bio.PDB`` has been updated to support parsing REMARK 99 header entries from
+PDB-style Astral files.
+
+A new keyword parameter ``full_sequences`` was added to ``Bio.pairwise2``'s
+pretty print method ``format_alignment`` to restore the output of local
+alignments to the 'old' format (showing the whole sequences including the
+un-aligned parts instead of only showing the aligned parts).
+
+A new function ``charge_at_pH(pH)`` has been added to ``ProtParam`` and
+``IsoelectricPoint`` in ``Bio.SeqUtils``.
+
+The ``PairwiseAligner`` in ``Bio.Align`` was extended to allow generalized
+pairwise alignments, i.e. alignments of any Python object, for example
+three-letter amino acid sequences, three-nucleotide codons, and arrays of
+integers.
+
+A new module ``substitution_matrices`` was added to ``Bio.Align``, which
+includes an ``Array`` class that can be used as a substitution matrix. As
+the ``Array`` class is a subclass of a numpy array, mathematical operations
+can be applied to it directly, and C code that makes use of substitution
+matrices can directly access the numerical values stored in the substitution
+matrices. This module is intended as a replacement of ``Bio.SubsMat``,
+which is currently unmaintained.
+
+As in recent releases, more of our code is now explicitly available under
+either our original "Biopython License Agreement", or the very similar but
+more commonly used "3-Clause BSD License".  See the ``LICENSE.rst`` file for
+more details.
+
+Additionally, a number of small bugs and typos have been fixed with further
+additions to the test suite, and there has been further work to follow the
+Python PEP8, PEP257 and best practice standard coding style. We have also
+started to use the ``black`` Python code formatting tool.
+
+Many thanks to the Biopython developers and community for making this release
+possible, especially the following contributors:
+
+- Chris MacRaild
+- Chris Rands
+- Damien Goutte-Gattat (first contribution)
+- Devang Thakkar
+- Harry Jubb
+- Joe Greener
+- Kiran Mukhyala (first contribution)
+- Konstantin Vdovkin
+- Mark Amery
+- Markus Piotrowski
+- Michiel de Hoon
+- Mike Moritz (first contribution)
+- Mustafa Anil Tuncel
+- Nick Negretti
+- Peter Cock
+- Peter Kerpedjiev
+- Sergio Valqui
+- Spencer Bliven
+- Victor Lin
+
+
+16 July 2019: Biopython 1.74
+============================
+
+This release of Biopython supports Python 2.7, 3.4, 3.5, 3.6 and 3.7. However,
+it will be the last release to support Python 3.4 which is now at end-of-life.
+It has also been tested on PyPy2.7 v6.0.0 and PyPy3.5 v6.0.0.
+
+As in recent releases, more of our code is now explicitly available under
+either our original "Biopython License Agreement", or the very similar but
+more commonly used "3-Clause BSD License".  See the ``LICENSE.rst`` file for
+more details.
+
+Our core sequence objects (``Seq``, ``UnknownSeq``, and ``MutableSeq``) now
+have a string-like ``.join()`` method.
+
+The NCBI now allows longer accessions in the GenBank file LOCUS line, meaning
+the fields may not always follow the historical column based positions. We
+no longer give a warning when parsing these. We now allow writing such files
+(although with a warning as support for reading them is not yet widespread).
+
+Support for the ``mysqlclient`` package, a fork of MySQLdb, has been added.
+
+We now capture the IDcode field from PDB Header records.
+
+``Bio.pairwise2``'s pretty-print output from ``format_alignment`` has been
+optimized for local alignments: If they do not consist of the whole sequences,
+only the aligned section of the sequences are shown, together with the start
+positions of the sequences (in 1-based notation). Alignments of lists will now
+also be prettily printed.
+
+``Bio.SearchIO`` now supports parsing the text output of the HHsuite protein
+sequence search tool. The format name is ``hhsuite2-text`` and
+``hhsuite3-text``, for versions 2 and 3 of HHsuite, respectively.
+
+``Bio.SearchIO`` HSP objects has a new attribute called ``output_index``. This
+attribute is meant for capturing the order by which the HSP were output in the
+parsed file and is set with a default value of -1 for all HSP objects. It is
+also used for sorting the output of ``QueryResult.hsps``.
+
+``Bio.SeqIO.AbiIO`` has been updated to preserve bytes value when parsing. The
+goal of this change is make the parser more robust by being able to extract
+string-values that are not utf-8-encoded. This affects all tag values, except
+for ID and description values, where they need to be extracted as strings
+to conform to the ``SeqRecord`` interface. In this case, the parser will
+attempt to decode using ``utf-8`` and fall back to the system encoding if that
+fails. This change affects Python 3 only.
+
+``Bio.motifs.mast`` has been updated to parse XML output files from MAST over
+the plain-text output file. The goal of this change is to parse a more
+structured data source with minimal loss of functionality upon future MAST
+releases. Class structure remains the same plus an additional attribute
+``Record.strand_handling`` required for diagram parsing.
+
+``Bio.Entrez`` now automatically retries HTTP requests on failure. The
+maximum number of tries and the sleep between them can be configured by
+changing ``Bio.Entrez.max_tries`` and ``Bio.Entrez.sleep_between_tries``.
+(The defaults are 3 tries and 15 seconds, respectively.)
+
+The restriction enzyme list in Bio.Restriction has been updated to the May
+2019 release of REBASE.
+
+All tests using the older print-and-compare approach have been replaced by
+unittests following Python's standard testing framework.
+
+On the documentation side, all the public modules, classes, methods and
+functions now have docstrings (built in help strings). Furthermore, the PDF
+version of the *Biopython Tutorial and Cookbook* now uses syntax coloring
+for code snippets.
+
+Additionally, a number of small bugs and typos have been fixed with further
+additions to the test suite, and there has been further work to follow the
+Python PEP8, PEP257 and best practice standard coding style.
+
+Many thanks to the Biopython developers and community for making this release
+possible, especially the following contributors:
+
+- Andrey Raspopov (first contribution)
+- Antony Lee
+- Benjamin Rowell (first contribution)
+- Bernhard Thiel
+- Brandon Invergo
+- Catherine Lesuisse
+- Chris Rands
+- Deepak Khatri (first contribution)
+- Gert Hulselmans
+- Jared Andrews
+- Jens Thomas (first contribution)
+- Konstantin Vdovkin
+- Lenna Peterson
+- Mark Amery
+- Markus Piotrowski
+- Micky Yun Chan (first contribution)
+- Nick Negretti
+- Peter Cock
+- Peter Kerpedjiev
+- Ralf Stephan
+- Rob Miller (first contribution)
+- Sergio Valqui
+- Victor Lin
+- Wibowo 'Bow' Arindrarto
+- Zheng Ruan
+
+
+18 December 2018: Biopython 1.73
+================================
 
 This release of Biopython supports Python 2.7, 3.4, 3.5, 3.6 and 3.7.
 It has also been tested on PyPy2.7 v6.0.0 and PyPy3.5 v6.0.0.
@@ -18,6 +314,12 @@ As in recent releases, more of our code is now explicitly available under
 either our original "Biopython License Agreement", or the very similar but
 more commonly used "3-Clause BSD License".  See the ``LICENSE.rst`` file for
 more details.
+
+The dictionary-like indexing in SeqIO and SearchIO will now explicitly preserve
+record order to match a behaviour change in the Python standard dict object.
+This means looping over the index will load the records in the on-disk order,
+which will be much faster (previously it would be effectively at random, based
+on the key hash sorting).
 
 The "grant" matrix in Bio.SubsMat.MatrixInfo has been replaced as our original
 values taken from Gerhard Vogt's old webpages at EMBL Heidelberg were
@@ -42,19 +344,25 @@ Many thanks to the Biopython developers and community for making this release
 possible, especially the following contributors:
 
 - Alona Levy-Jurgenson (first contribution)
+- Ariel Aptekmann
 - Brandon Invergo
 - Catherine Lesuisse
 - Chris Rands
 - Darcy Mason (first contribution)
+- Devang Thakkar (first contribution)
+- Ivan Antonov (first contribution)
+- Jeremy LaBarage (first contribution)
 - Juraj Szász (first contribution)
 - Kai Blin
 - Konstantin Vdovkin (first contribution)
+- Manuel Nuno Melo (first contribution)
 - Maximilian Greil
 - Nick Negretti (first contribution)
 - Peter Cock
 - Rona Costello (first contribution)
 - Spencer Bliven
 - Wibowo 'Bow' Arindrarto
+- Yi Hsiao (first contribution)
 
 
 21 June 2018: Biopython 1.72
@@ -169,11 +477,11 @@ For Python 3 compatibility, comparison operators for the entities within a
 Bio.PDB Structure object were implemented. These allow the comparison of
 models, chains, residues, and atoms with the common operators  (==, !=, >, ...)
 Comparisons are based on IDs and take the parents of the entity up to the
-model level into account. For consistent behaviour of all entities the operators
-for atoms were modified to also consider the parent IDs. NOTE: this represents a
-change in behaviour in respect to v1.70 for Atom comparisons. In order to mimic
-the behaviour of previous versions, comparison will have to be done for Atom IDs
-and alternative locations specifically.
+model level into account. For consistent behaviour of all entities the
+operators for atoms were modified to also consider the parent IDs. NOTE: this
+represents a change in behaviour in respect to v1.70 for Atom comparisons. In
+order to mimic the behaviour of previous versions, comparison will have to be
+done for Atom IDs and alternative locations specifically.
 
 In this release more of our code is now explicitly available under either our
 original "Biopython License Agreement", or the very similar but more commonly
@@ -1900,7 +2208,8 @@ the new Bio.SeqIO module.
 Bio.FormatIO has been removed (a gradual deprecation was not possible).
 Please look at Bio.SeqIO for sequence input/output instead.
 
-Fix for a bug in Bio.Cluster, which caused kcluster() to hang on some platforms.
+Fix for a bug in Bio.Cluster, which caused kcluster() to hang on some
+platforms.
 
 Bio.expressions has been deprecated.
 
@@ -2016,12 +2325,14 @@ Major Changes since v1.30. For a full list of changes please see the CVS
 IMPORTANT: Biopython now works with Python version >= 2.3
 
 NEW: Bio.Nexus -- thanks to Frank Kauff
-Bio.Nexus is a Nexus file parser. Nexus is a common format for phylogenetic trees.
+Bio.Nexus is a Nexus file parser. Nexus is a common format for phylogenetic
+trees.
 
 NEW: CAPS module -- Thanks to Jonathan Taylor.
 
-NEW: Restriction enzyme package contributed by Frederic Sohm. This includes classes for
-manipulating enzymes, updating from Rebase, as well as documentation and Tests.
+NEW: Restriction enzyme package contributed by Frederic Sohm. This includes
+classes for manipulating enzymes, updating from Rebase, as well as
+documentation and Tests.
 
 CHANGED: Bio.PDB -- thanks to Thomas Hamelryck.
 
@@ -2048,12 +2359,11 @@ in BioPython:
 - forward_complement, reverse_complement in Bio.GFF.easy
 - complement, antiparallel in Bio.SeqUtils
 
-These functions have now been deprecated, and will generate a DeprecationWarning
-when used.
-The functions complement and reverse_complement, when applied to a Seq object,
-will return a new Seq object. The same function applied to a MutableSeq object
-will modify the MutableSeq object itself, and don't return anything.
-
+These functions have now been deprecated, and will issue a DeprecationWarning
+when used. The functions complement and reverse_complement, when applied to a
+Seq object, will return a new Seq object. The same function applied to a
+MutableSeq object will modify the MutableSeq object itself, and don't return
+anything.
 
 
 May 14, 2004: Biopython 1.30
@@ -2077,13 +2387,14 @@ May 14, 2004: Biopython 1.30
 - Fasta parser updated to use Martel for parsing and indexing, allowing better
   speed and dealing with large data files.
 - Updated to Registry code. Now 'from Bio import db' gives you a number of new
-  retrieval options, including embl, fasta, genbak, interpro, prodoc and swissprot.
-- GenBank parser uses new Martel format. GenBank retrieval now uses EUtils instead
-  of the old non-working entrez scripts. GenBank indexing uses standard Mindy
-  indexing. Fix for valueless qualifiers in feature keys -- thanks to Leighton
-  Pritchard.
-- Numerous updated to Bio.PDB modules -- thanks to Thomas. PDB can now parse headers
-  -- thanks to Kristian Rother.
+  retrieval options, including embl, fasta, genbak, interpro, prodoc and
+  swissprot.
+- GenBank parser uses new Martel format. GenBank retrieval now uses EUtils
+  instead of the old non-working entrez scripts. GenBank indexing uses standard
+  Mindy indexing. Fix for valueless qualifiers in feature keys -- thanks to
+  Leighton Pritchard.
+- Numerous updated to Bio.PDB modules -- thanks to Thomas. PDB can now parse
+  headers -- thanks to Kristian Rother.
 - Updates to the Ace parser -- thanks to Frank Kauff and Leighton Pritchard.
 
 - Added pgdb (PyGreSQL) support to BioSQL -- thanks to Marc Colosimo.
@@ -2107,8 +2418,8 @@ May 14, 2004: Biopython 1.30
 - Updates for Emboss commandlines, water and tranalign.
 - Fixes to the FormatIO system of file conversion.
 
-- C++ code (KDTree, Affy) now compiled by default on most platforms -- thanks to
-  Michael for some nice distutils hacks and many people for testing.
+- C++ code (KDTree, Affy) now compiled by default on most platforms -- thanks
+  to Michael for some nice distutils hacks and many people for testing.
 - Deprecated Bio.sequtils -- use Bio.SeqUtils instead.
 - Deprecated Bio.SVM -- use libsvm instead.
 - Deprecated Bio.kMeans and Bio.xkMeans -- use Bio.cluster instead.
@@ -2343,7 +2654,7 @@ Aug17-18, 2000: Bioinformatics Open Source Conference 2000
 ==========================================================
 
 We had a very good Birds-of-a-Feather meeting:
-http://www.biopython.org/pipermail/biopython/2000-August/000360.html
+http://mailman.open-bio.org/pipermail/biopython/2000-August/000360.html
 
 
 Aug 2, 2000: Biopython 0.90d02 is released.
@@ -2373,12 +2684,12 @@ August 1999: Biopython project founded.
 Call for Participation sent out to relevant mailing lists, news
 groups.
 
-The Biopython Project (http://www.biopython.org/) is a new open
+The Biopython Project (https://www.biopython.org/) is a new open
 collaborative effort to develop freely available Python libraries and
 applications that address the needs of current and future work in
 bioinformatics, including sequence analysis, structural biology,
 pathways, expression data, etc.  When available, the source code will
-be released as open source (http://www.biopython.org/License.shtml)
+be released as open source (https://github.com/biopython/biopython/blob/9c4785fc9eaf8a3bc436c6c0b16e7a05019cade1/LICENSE)
 under terms similar to Python.
 
 This is a Call for Participation for interested people to join the

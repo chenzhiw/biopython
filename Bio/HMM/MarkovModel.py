@@ -1,18 +1,16 @@
-# This code is part of the Biopython distribution and governed by its
-# license.  Please see the LICENSE file that should have been included
-# as part of this package.
+# Copyright 2001 Brad Chapman.  All rights reserved.
 #
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
 
 """Deal with representations of Markov Models."""
 # standard modules
 import copy
 import math
 import random
-
-# TODO - Take advantage of defaultdict once Python 2.4 is dead?
-# from collections import defaultdict
-
-from Bio._py3k import range
+from collections import defaultdict
 
 from Bio.Seq import MutableSeq
 
@@ -21,21 +19,16 @@ def _gen_random_array(n):
     """Return an array of n random numbers summing to 1.0 (PRIVATE)."""
     randArray = [random.random() for i in range(n)]
     total = sum(randArray)
-    normalizedRandArray = [x / total for x in randArray]
-
-    return normalizedRandArray
+    return [x / total for x in randArray]
 
 
 def _calculate_emissions(emission_probs):
     """Calculate which symbols can be emitted in each state (PRIVATE)."""
     # loop over all of the state-symbol duples, mapping states to
     # lists of emitted symbols
-    emissions = dict()
+    emissions = defaultdict(list)
     for state, symbol in emission_probs:
-        try:
-            emissions[state].append(symbol)
-        except KeyError:
-            emissions[state] = [symbol]
+        emissions[state].append(symbol)
 
     return emissions
 
@@ -49,12 +42,9 @@ def _calculate_from_transitions(trans_probs):
     lists of destination states reachable from the source state via a
     transition.
     """
-    transitions = dict()
+    transitions = defaultdict(list)
     for from_state, to_state in trans_probs:
-        try:
-            transitions[from_state].append(to_state)
-        except KeyError:
-            transitions[from_state] = [to_state]
+        transitions[from_state].append(to_state)
 
     return transitions
 
@@ -68,17 +58,14 @@ def _calculate_to_transitions(trans_probs):
     lists of source states from which the destination is reachable via a
     transition.
     """
-    transitions = dict()
+    transitions = defaultdict(list)
     for from_state, to_state in trans_probs:
-        try:
-            transitions[to_state].append(from_state)
-        except KeyError:
-            transitions[to_state] = [from_state]
+        transitions[to_state].append(from_state)
 
     return transitions
 
 
-class MarkovModelBuilder(object):
+class MarkovModelBuilder:
     """Interface to build up a Markov Model.
 
     This class is designed to try to separate the task of specifying the
@@ -112,13 +99,11 @@ class MarkovModelBuilder(object):
         # the probabilities for transitions and emissions
         # by default we have no transitions and all possible emissions
         self.transition_prob = {}
-        self.emission_prob = self._all_blank(state_alphabet,
-                                             emission_alphabet)
+        self.emission_prob = self._all_blank(state_alphabet, emission_alphabet)
 
         # the default pseudocounts for transition and emission counting
         self.transition_pseudo = {}
-        self.emission_pseudo = self._all_pseudo(state_alphabet,
-                                                emission_alphabet)
+        self.emission_pseudo = self._all_pseudo(state_alphabet, emission_alphabet)
 
     def _all_blank(self, first_alphabet, second_alphabet):
         """Return a dictionary with all counts set to zero (PRIVATE).
@@ -158,8 +143,10 @@ class MarkovModelBuilder(object):
         """
         # user must set initial probabilities
         if not self.initial_prob:
-            raise Exception("set_initial_probabilities must be called to " +
-                            "fully initialize the Markov model")
+            raise Exception(
+                "set_initial_probabilities must be called to "
+                "fully initialize the Markov model"
+            )
 
         initial_prob = copy.deepcopy(self.initial_prob)
         transition_prob = copy.deepcopy(self.transition_prob)
@@ -167,8 +154,13 @@ class MarkovModelBuilder(object):
         transition_pseudo = copy.deepcopy(self.transition_pseudo)
         emission_pseudo = copy.deepcopy(self.emission_pseudo)
 
-        return HiddenMarkovModel(initial_prob, transition_prob, emission_prob,
-                                 transition_pseudo, emission_pseudo)
+        return HiddenMarkovModel(
+            initial_prob,
+            transition_prob,
+            emission_prob,
+            transition_pseudo,
+            emission_pseudo,
+        )
 
     def set_initial_probabilities(self, initial_prob):
         """Set initial state probabilities.
@@ -195,12 +187,12 @@ class MarkovModelBuilder(object):
         # ensure that all referenced states are valid
         for state in initial_prob:
             if state not in self._state_alphabet.letters:
-                raise ValueError("State %s was not found in the sequence "
-                                 "alphabet" % state)
+                raise ValueError(
+                    "State %s was not found in the sequence alphabet" % state
+                )
 
         # distribute the residual probability, if any
-        num_states_not_set =\
-            len(self._state_alphabet.letters) - len(self.initial_prob)
+        num_states_not_set = len(self._state_alphabet.letters) - len(self.initial_prob)
         if num_states_not_set < 0:
             raise Exception("Initial probabilities can't exceed # of states")
         prob_sum = sum(self.initial_prob.values())
@@ -262,9 +254,11 @@ class MarkovModelBuilder(object):
         Returns the dictionary containing the transition probabilities.
         """
         if not self.transition_prob:
-            raise Exception("No transitions have been allowed yet. " +
-                            "Allow some or all transitions by calling " +
-                            "allow_transition or allow_all_transitions first.")
+            raise Exception(
+                "No transitions have been allowed yet. "
+                "Allow some or all transitions by calling "
+                "allow_transition or allow_all_transitions first."
+            )
 
         transitions_from = _calculate_from_transitions(self.transition_prob)
         for from_state in transitions_from:
@@ -280,8 +274,9 @@ class MarkovModelBuilder(object):
         Returns the dictionary containing the emission probabilities.
         """
         if not self.emission_prob:
-            raise Exception("No emissions have been allowed yet. " +
-                            "Allow some or all emissions.")
+            raise Exception(
+                "No emissions have been allowed yet. Allow some or all emissions."
+            )
 
         emissions = _calculate_emissions(self.emission_prob)
         for state in emissions:
@@ -312,11 +307,9 @@ class MarkovModelBuilder(object):
         """
         # first get all probabilities and pseudo counts set
         # to the default values
-        all_probs = self._all_blank(self._state_alphabet,
-                                    self._state_alphabet)
+        all_probs = self._all_blank(self._state_alphabet, self._state_alphabet)
 
-        all_pseudo = self._all_pseudo(self._state_alphabet,
-                                      self._state_alphabet)
+        all_pseudo = self._all_pseudo(self._state_alphabet, self._state_alphabet)
 
         # now set any probabilities and pseudo counts that
         # were previously set
@@ -330,8 +323,9 @@ class MarkovModelBuilder(object):
         self.transition_prob = all_probs
         self.transition_pseudo = all_pseudo
 
-    def allow_transition(self, from_state, to_state, probability=None,
-                         pseudocount=None):
+    def allow_transition(
+        self, from_state, to_state, probability=None, pseudocount=None
+    ):
         """Set a transition as being possible between the two states.
 
         probability and pseudocount are optional arguments
@@ -346,12 +340,15 @@ class MarkovModelBuilder(object):
         # check the sanity of adding these states
         for state in [from_state, to_state]:
             if state not in self._state_alphabet.letters:
-                raise ValueError("State %s was not found in the sequence "
-                                 "alphabet" % state)
+                raise ValueError(
+                    "State %s was not found in the sequence alphabet" % state
+                )
 
         # ensure that the states are not already set
-        if (from_state, to_state) not in self.transition_prob and \
-           (from_state, to_state) not in self.transition_pseudo:
+        if (from_state, to_state) not in self.transition_prob and (
+            from_state,
+            to_state,
+        ) not in self.transition_pseudo:
             # set the initial probability
             if probability is None:
                 probability = 0
@@ -362,8 +359,9 @@ class MarkovModelBuilder(object):
                 pseudocount = self.DEFAULT_PSEUDO
             self.transition_pseudo[(from_state, to_state)] = pseudocount
         else:
-            raise KeyError("Transition from %s to %s is already allowed."
-                           % (from_state, to_state))
+            raise KeyError(
+                "Transition from %s to %s is already allowed." % (from_state, to_state)
+            )
 
     def destroy_transition(self, from_state, to_state):
         """Restrict transitions between the two states.
@@ -376,8 +374,10 @@ class MarkovModelBuilder(object):
             del self.transition_prob[(from_state, to_state)]
             del self.transition_pseudo[(from_state, to_state)]
         except KeyError:
-            raise KeyError("Transition from %s to %s is already disallowed."
-                           % (from_state, to_state))
+            raise KeyError(
+                "Transition from %s to %s is already disallowed."
+                % (from_state, to_state)
+            )
 
     def set_transition_score(self, from_state, to_state, probability):
         """Set the probability of a transition between two states.
@@ -389,8 +389,9 @@ class MarkovModelBuilder(object):
         if (from_state, to_state) in self.transition_prob:
             self.transition_prob[(from_state, to_state)] = probability
         else:
-            raise KeyError("Transition from %s to %s is not allowed."
-                           % (from_state, to_state))
+            raise KeyError(
+                "Transition from %s to %s is not allowed." % (from_state, to_state)
+            )
 
     def set_transition_pseudocount(self, from_state, to_state, count):
         """Set the default pseudocount for a transition.
@@ -408,8 +409,9 @@ class MarkovModelBuilder(object):
         if (from_state, to_state) in self.transition_pseudo:
             self.transition_pseudo[(from_state, to_state)] = count
         else:
-            raise KeyError("Transition from %s to %s is not allowed."
-                           % (from_state, to_state))
+            raise KeyError(
+                "Transition from %s to %s is not allowed." % (from_state, to_state)
+            )
 
     # --- functions to deal with emissions from the sequence
 
@@ -423,8 +425,9 @@ class MarkovModelBuilder(object):
         if (seq_state, emission_state) in self.emission_prob:
             self.emission_prob[(seq_state, emission_state)] = probability
         else:
-            raise KeyError("Emission of %s from %s is not allowed."
-                           % (emission_state, seq_state))
+            raise KeyError(
+                "Emission of %s from %s is not allowed." % (emission_state, seq_state)
+            )
 
     def set_emission_pseudocount(self, seq_state, emission_state, count):
         """Set the default pseudocount for an emission.
@@ -442,15 +445,22 @@ class MarkovModelBuilder(object):
         if (seq_state, emission_state) in self.emission_pseudo:
             self.emission_pseudo[(seq_state, emission_state)] = count
         else:
-            raise KeyError("Emission of %s from %s is not allowed."
-                           % (emission_state, seq_state))
+            raise KeyError(
+                "Emission of %s from %s is not allowed." % (emission_state, seq_state)
+            )
 
 
-class HiddenMarkovModel(object):
+class HiddenMarkovModel:
     """Represent a hidden markov model that can be used for state estimation."""
 
-    def __init__(self, initial_prob, transition_prob, emission_prob,
-                 transition_pseudo, emission_pseudo):
+    def __init__(
+        self,
+        initial_prob,
+        transition_prob,
+        emission_prob,
+        transition_pseudo,
+        emission_pseudo,
+    ):
         """Initialize a Markov Model.
 
         Note: You should use the MarkovModelBuilder class instead of
@@ -589,7 +599,7 @@ class HiddenMarkovModel(object):
                     max_prob = max(possible_state_probs.values())
 
                 # v_{k}(i)
-                viterbi_probs[(cur_state, i)] = (emission_part + max_prob)
+                viterbi_probs[(cur_state, i)] = emission_part + max_prob
 
                 if i > 0:
                     # get the most likely prev_state leading to cur_state
@@ -609,15 +619,15 @@ class HiddenMarkovModel(object):
         state_path_prob = max(all_probs.values())
 
         # find the last pointer we need to trace back from
-        last_state = ''
+        last_state = ""
         for state in all_probs:
             if all_probs[state] == state_path_prob:
                 last_state = state
 
-        assert last_state != '', "Didn't find the last state to trace from!"
+        assert last_state != "", "Didn't find the last state to trace from!"
 
         # --- traceback
-        traceback_seq = MutableSeq('', state_alphabet)
+        traceback_seq = MutableSeq("", state_alphabet)
 
         loop_seq = list(range(1, len(sequence)))
         loop_seq.reverse()
@@ -646,17 +656,11 @@ class HiddenMarkovModel(object):
         and log-transformed values.
         """
         log_prob = copy.copy(probability)
-        try:
-            neg_inf = float("-inf")
-        except ValueError:
-            # On Python 2.5 or older that was handled in C code,
-            # and failed on Windows XP 32bit
-            neg_inf = - 1E400
         for key in log_prob:
             prob = log_prob[key]
             if prob > 0:
                 log_prob[key] = math.log(log_prob[key])
             else:
-                log_prob[key] = neg_inf
+                log_prob[key] = -math.inf
 
         return log_prob

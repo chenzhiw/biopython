@@ -32,23 +32,23 @@ Similarly, when writing to this format, Biopython will ONLY record the record's
 example above.
 """
 
-from __future__ import print_function
 
 from Bio.Alphabet import single_letter_alphabet
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.SeqIO.Interfaces import SequentialSequenceWriter
+from Bio.SeqIO.Interfaces import SequenceWriter
 from Bio.SeqIO.Interfaces import _clean, _get_seq_string
+from Bio import StreamModeError
 
 
-def TabIterator(handle, alphabet=single_letter_alphabet):
+def TabIterator(source, alphabet=single_letter_alphabet):
     """Iterate over tab separated lines as SeqRecord objects.
 
     Each line of the file should contain one tab only, dividing the line
     into an identifier and the full sequence.
 
     Arguments:
-     - handle - input file
+     - source - file-like object opened in text mode, or a path to a file
      - alphabet - optional alphabet
 
     The first field is taken as the record's .id and .name (regardless of
@@ -73,24 +73,36 @@ def TabIterator(handle, alphabet=single_letter_alphabet):
     gi|45478721|ref|NP_995576.1| length 90
 
     """
-    for line in handle:
-        try:
-            title, seq = line.split("\t")  # will fail if more than one tab!
-        except ValueError:
-            if line.strip() == "":
-                # It's a blank line, ignore it
-                continue
-            raise ValueError("Each line should have one tab separating the" +
-                             " title and sequence, this line has %i tabs: %r"
-                             % (line.count("\t"), line))
-        title = title.strip()
-        seq = seq.strip()  # removes the trailing new line
-        yield SeqRecord(Seq(seq, alphabet),
-                        id=title, name=title,
-                        description="")
+    try:
+        handle = open(source)
+    except TypeError:
+        handle = source
+        if handle.read(0) != "":
+            raise StreamModeError(
+                "Tab-separated plain-text files must be opened in text mode."
+            ) from None
+    try:
+        for line in handle:
+            try:
+                title, seq = line.split("\t")  # will fail if more than one tab!
+            except ValueError:
+                if line.strip() == "":
+                    # It's a blank line, ignore it
+                    continue
+                raise ValueError(
+                    "Each line should have one tab separating the"
+                    + " title and sequence, this line has %i tabs: %r"
+                    % (line.count("\t"), line)
+                ) from None
+            title = title.strip()
+            seq = seq.strip()  # removes the trailing new line
+            yield SeqRecord(Seq(seq, alphabet), id=title, name=title, description="")
+    finally:
+        if handle is not source:
+            handle.close()
 
 
-class TabWriter(SequentialSequenceWriter):
+class TabWriter(SequenceWriter):
     """Class to write simple tab separated format files (OBSOLETE).
 
     Each line consists of "id(tab)sequence" only.
@@ -110,6 +122,7 @@ class TabWriter(SequentialSequenceWriter):
 
 
 def as_tab(record):
+    """Return record as tab separated (id(tab)seq) string."""
     title = _clean(record.id)
     seq = _get_seq_string(record)  # Catches sequence being None
     assert "\t" not in title
@@ -123,4 +136,5 @@ def as_tab(record):
 
 if __name__ == "__main__":
     from Bio._utils import run_doctest
+
     run_doctest(verbose=0)

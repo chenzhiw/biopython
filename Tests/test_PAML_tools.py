@@ -3,6 +3,8 @@
 # license. Please see the LICENSE file that should have been included
 # as part of this package.
 
+"""Tests for PAML tools module."""
+
 import unittest
 import os
 import sys
@@ -28,12 +30,14 @@ def which(program):
         # For Windows, the user is instructed to move the programs to a folder
         # and then to add the folder to the system path. Just in case they didn't
         # do that, we can check for it in Program Files.
-        likely_dirs = ["",  # Current dir
-                       prog_files,
-                       os.path.join(prog_files, "paml41"),
-                       os.path.join(prog_files, "paml43"),
-                       os.path.join(prog_files, "paml44"),
-                       os.path.join(prog_files, "paml45")] + sys.path
+        likely_dirs = [
+            "",  # Current dir
+            prog_files,
+            os.path.join(prog_files, "paml41"),
+            os.path.join(prog_files, "paml43"),
+            os.path.join(prog_files, "paml44"),
+            os.path.join(prog_files, "paml45"),
+        ] + sys.path
         os_path.extend(likely_dirs)
     for path in os.environ["PATH"].split(os.pathsep):
         exe_file = os.path.join(path, program)
@@ -50,7 +54,8 @@ else:
 for binary in binaries:
     if which(binary) is None:
         raise MissingExternalDependencyError(
-            "Install PAML if you want to use the Bio.Phylo.PAML wrapper.")
+            "Install PAML if you want to use the Bio.Phylo.PAML wrapper."
+        )
 
 
 class Common(unittest.TestCase):

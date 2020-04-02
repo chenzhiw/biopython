@@ -1,11 +1,12 @@
 # Copyright (C) 2002, Thomas Hamelryck (thamelry@binf.ku.dk)
-# This code is part of the Biopython distribution and governed by its
-# license.  Please see the LICENSE file that should have been included
-# as part of this package.
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
 
 """Selection of atoms, residues, etc."""
 
-from __future__ import print_function
 
 import itertools
 
@@ -27,7 +28,7 @@ def uniqueify(items):
 
 def get_unique_parents(entity_list):
     """Translate a list of entities to a list of their (unique) parents."""
-    unique_parents = set(entity.get_parent() for entity in entity_list)
+    unique_parents = {entity.get_parent() for entity in entity_list}
     return list(unique_parents)
 
 
@@ -73,10 +74,11 @@ def unfold_entities(entity_list, target_level):
     else:  # we're going up, e.g. A->S
         for i in range(level_index, target_index):
             # find unique parents
-            entity_list = set(entity.get_parent() for entity in entity_list)
+            entity_list = {entity.get_parent() for entity in entity_list}
     return list(entity_list)
 
 
 if __name__ == "__main__":
     from Bio._utils import run_doctest
+
     run_doctest()

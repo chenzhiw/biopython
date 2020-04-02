@@ -20,18 +20,17 @@ For drawing capabilities, this module uses reportlab to draw and write
 the diagram: http://www.reportlab.com
 """
 
-from __future__ import print_function
 
 from reportlab.lib import colors
-
-from Bio._py3k import range
 
 # GenomeDiagram imports
 from ._FeatureSet import FeatureSet
 from ._GraphSet import GraphSet
 
+_grey = colors.Color(0.6, 0.6, 0.6)
 
-class Track(object):
+
+class Track:
     """Track.
 
     Attributes:
@@ -81,18 +80,36 @@ class Track(object):
 
     """
 
-    def __init__(self, name=None, height=1, hide=0, greytrack=0,
-                 greytrack_labels=5, greytrack_fontsize=8,
-                 greytrack_font='Helvetica', greytrack_font_rotation=0,
-                 greytrack_font_color=colors.Color(0.6, 0.6, 0.6),
-                 scale=1, scale_format=None, scale_color=colors.black,
-                 scale_font='Helvetica', scale_fontsize=6,
-                 scale_fontangle=45, scale_largeticks=0.5, scale_ticks=1,
-                 scale_smallticks=0.3, scale_largetick_interval=1e6,
-                 scale_smalltick_interval=1e4, scale_largetick_labels=1,
-                 scale_smalltick_labels=0, axis_labels=1,
-                 start=None, end=None,
-                 greytrack_font_colour=None, scale_colour=None):
+    def __init__(
+        self,
+        name=None,
+        height=1,
+        hide=0,
+        greytrack=0,
+        greytrack_labels=5,
+        greytrack_fontsize=8,
+        greytrack_font="Helvetica",
+        greytrack_font_rotation=0,
+        greytrack_font_color=_grey,
+        scale=1,
+        scale_format=None,
+        scale_color=colors.black,
+        scale_font="Helvetica",
+        scale_fontsize=6,
+        scale_fontangle=45,
+        scale_largeticks=0.5,
+        scale_ticks=1,
+        scale_smallticks=0.3,
+        scale_largetick_interval=1e6,
+        scale_smalltick_interval=1e4,
+        scale_largetick_labels=1,
+        scale_smalltick_labels=0,
+        axis_labels=1,
+        start=None,
+        end=None,
+        greytrack_font_colour=None,
+        scale_colour=None,
+    ):
         """Initialize.
 
         Arguments:
@@ -147,8 +164,8 @@ class Track(object):
         if scale_colour is not None:
             scale_color = scale_colour
 
-        self._next_id = 0       # This will count sets as they are added to the track
-        self._sets = {}         # Holds sets, keyed by unique ID
+        self._next_id = 0  # This will count sets as they are added to the track
+        self._sets = {}  # Holds sets, keyed by unique ID
 
         # Assign attribute values from instantiation
         self.height = height
@@ -186,27 +203,25 @@ class Track(object):
 
     def add_set(self, set):
         """Add a preexisting FeatureSet or GraphSet object to the track."""
-        set.id = self._next_id          # Assign unique id to set
-        set.parent = self               # Make set's parent this track
+        set.id = self._next_id  # Assign unique id to set
+        set.parent = self  # Make set's parent this track
         self._sets[self._next_id] = set  # Add set, keyed by unique id
-        self._next_id += 1              # Increment unique set ids
+        self._next_id += 1  # Increment unique set ids
 
-    def new_set(self, type='feature', **args):
+    def new_set(self, type="feature", **args):
         """Create a new FeatureSet or GraphSet object.
 
         Create a new FeatureSet or GraphSet object, add it to the
         track, and return for user manipulation
         """
-        type_dict = {'feature': FeatureSet,
-                     'graph': GraphSet
-                     }
+        type_dict = {"feature": FeatureSet, "graph": GraphSet}
         set = type_dict[type]()
         for key in args:
             setattr(set, key, args[key])
-        set.id = self._next_id          # Assign unique id to set
-        set.parent = self               # Make set's parent this track
+        set.id = self._next_id  # Assign unique id to set
+        set.parent = self  # Make set's parent this track
         self._sets[self._next_id] = set  # Add set, keyed by unique id
-        self._next_id += 1              # Increment unique set ids
+        self._next_id += 1  # Increment unique set ids
         return set
 
     def del_set(self, set_id):
@@ -223,13 +238,13 @@ class Track(object):
 
     def range(self):
         """Return the lowest and highest base (or mark) numbers as a tuple."""
-        lows, highs = [], []            # Holds set of low and high values from sets
+        lows, highs = [], []  # Holds set of low and high values from sets
         if self.start is not None:
             lows.append(self.start)
         if self.end is not None:
             highs.append(self.end)
         for set in self._sets.values():
-            low, high = set.range()     # Get each set range
+            low, high = set.range()  # Get each set range
             lows.append(low)
             highs.append(high)
         if lows:
@@ -250,9 +265,9 @@ class Track(object):
            account of the track is required
 
         """
-        if not verbose:             # Return the short description
-            return "%s" % self      # Use __str__ method instead
-        else:                       # Return the long description
+        if not verbose:  # Return the short description
+            return "%s" % self  # Use __str__ method instead
+        else:  # Return the long description
             outstr = ["\n<%s: %s>" % (self.__class__, self.name)]
             outstr.append("%d sets" % len(self._sets))
             for key in self._sets:
@@ -268,42 +283,3 @@ class Track(object):
         outstr = ["\n<%s: %s>" % (self.__class__, self.name)]
         outstr.append("%d sets" % len(self._sets))
         return "\n".join(outstr)
-
-
-################################################################################
-# RUN AS SCRIPT
-################################################################################
-
-if __name__ == '__main__':
-
-    # test code
-    from Bio import SeqIO
-    from random import normalvariate
-
-    genbank_entry = SeqIO.read('/data/genomes/Bacteria/Nanoarchaeum_equitans/NC_005213.gbk', 'gb')
-
-    gdfs1 = FeatureSet(0, 'Nanoarchaeum equitans CDS - CDS')
-    gdfs2 = FeatureSet(1, 'Nanoarchaeum equitans CDS - gene')
-    for feature in genbank_entry.features:
-        if feature.type == 'CDS':
-            gdfs1.add_feature(feature)
-        if feature.type == 'gene':
-            gdfs2.add_feature(feature)
-
-    gdt = Track()
-    gdt.add_set(gdfs1)
-    gdt.add_set(gdfs2)
-
-    graphdata = []
-    for pos in range(1, len(genbank_entry.seq), 1000):
-        graphdata.append((pos, normalvariate(0.5, 0.1)))
-    gdgs = GraphSet(2, 'test data')
-    gdgs.add_graph(graphdata, 'Test Data')
-    gdt.add_set(gdgs)
-
-    print(gdt.get_ids())
-    sets = gdt.get_sets()
-    for set in sets:
-        print(set)
-
-    print(gdt.get_element_limits())

@@ -7,7 +7,8 @@
 
 # TODO - Clean up the extra files created by clustalw?  e.g. *.dnd
 # and *.aln where we have not requested an explicit name?
-from __future__ import print_function
+"""Tests for Clustalw tool."""
+
 
 from Bio import MissingExternalDependencyError
 
@@ -22,7 +23,7 @@ from Bio.Application import ApplicationError
 #################################################################
 
 # Try to avoid problems when the OS is in another language
-os.environ['LANG'] = 'C'
+os.environ["LANG"] = "C"
 
 clustalw_exe = None
 if sys.platform == "win32":
@@ -60,21 +61,21 @@ if sys.platform == "win32":
             if clustalw_exe:
                 break
 else:
-    from Bio._py3k import getoutput
+    from subprocess import getoutput
     # Note that clustalw 1.83 and clustalw 2.1 don't obey the --version
     # command, but this does cause them to quit cleanly.  Otherwise they prompt
     # the user for input (causing a lock up).
     output = getoutput("clustalw2 --version")
     # Since "not found" may be in another language, try and be sure this is
     # really the clustalw tool's output
-    if "not found" not in output and "CLUSTAL" in output \
-    and "Multiple Sequence Alignments" in output:
-        clustalw_exe = "clustalw2"
+    if "not found" not in output and "not recognized" not in output:
+        if "CLUSTAL" in output and "Multiple Sequence Alignments" in output:
+            clustalw_exe = "clustalw2"
     if not clustalw_exe:
         output = getoutput("clustalw --version")
-        if "not found" not in output and "CLUSTAL" in output \
-        and "Multiple Sequence Alignments" in output:
-            clustalw_exe = "clustalw"
+        if "not found" not in output and "not recognized" not in output:
+            if "CLUSTAL" in output and "Multiple Sequence Alignments" in output:
+                clustalw_exe = "clustalw"
 
 if not clustalw_exe:
     raise MissingExternalDependencyError(
@@ -93,10 +94,10 @@ class ClustalWTestCase(unittest.TestCase):
                 os.remove(filename)
 
     def standard_test_procedure(self, cline):
-        """Standard testing procedure used by all tests."""
+        """Shared test procedure used by all tests."""
         self.assertTrue(str(eval(repr(cline))) == str(cline))
         input_records = SeqIO.to_dict(SeqIO.parse(cline.infile, "fasta"),
-                                      lambda rec: rec.id.replace(":", "_"))
+                                      lambda rec: rec.id.replace(":", "_"))  # noqa: E731
 
         # Determine name of tree file
         if cline.newtree:
@@ -130,7 +131,7 @@ class ClustalWTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(tree_file))
 
     def add_file_to_clean(self, filename):
-        """Adds a file for deferred removal by the tearDown routine."""
+        """Add a file for deferred removal by the tearDown routine."""
         self.files_to_clean.add(filename)
 
 
@@ -235,18 +236,16 @@ class ClustalWTestNormalConditions(ClustalWTestCase):
 
     def test_large_input_file(self):
         """Test a large input file."""
-
         # Create a large input file by converting another example file
         # (See Bug 2804, this will produce so much output on stdout that
         # subprocess could suffer a deadlock and hang).  Using all the
         # records should show the deadlock but is very slow - just thirty
         # seems to lockup on Mac OS X, even 20 on Linux (without the fix).
         input_file = "temp_cw_prot.fasta"
-        handle = open(input_file, "w")
         records = list(SeqIO.parse("NBRF/Cw_prot.pir", "pir"))[:40]
-        SeqIO.write(records, handle, "fasta")
-        handle.close()
-        del handle, records
+        with open(input_file, "w") as handle:
+            SeqIO.write(records, handle, "fasta")
+        del records
         output_file = "temp_cw_prot.aln"
 
         cline = ClustalwCommandline(clustalw_exe,
@@ -259,9 +258,8 @@ class ClustalWTestNormalConditions(ClustalWTestCase):
     def test_input_filename_with_space(self):
         """Test an input filename containing a space."""
         input_file = "Clustalw/temp horses.fasta"
-        handle = open(input_file, "w")
-        SeqIO.write(SeqIO.parse("Phylip/hennigian.phy", "phylip"), handle, "fasta")
-        handle.close()
+        with open(input_file, "w") as handle:
+            SeqIO.write(SeqIO.parse("Phylip/hennigian.phy", "phylip"), handle, "fasta")
         output_file = "temp with space.aln"
 
         cline = ClustalwCommandline(clustalw_exe,

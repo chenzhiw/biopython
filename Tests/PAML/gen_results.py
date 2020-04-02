@@ -1,17 +1,17 @@
-# Copyright (C) 2012, 2013, 2016 by Brandon Invergo (b.invergo@gmail.com)
+# Copyright (C) 2012, 2013, 2016, 2019 by Brandon Invergo (b.invergo@gmail.com)
 # This code is part of the Biopython distribution and governed by its
 # license. Please see the LICENSE file that should have been included
 # as part of this package.
 
-from __future__ import print_function
+"""Generate output for PAML tests."""
+
 
 import os.path
 import sys
 
-from Bio._py3k import range
 
-
-VERSIONS = ["4_1", "4_3", "4_4", "4_4c", "4_5", "4_6", "4_7", "4_8", "4_9a"]
+VERSIONS = ["4_1", "4_3", "4_4", "4_4c", "4_5", "4_6", "4_7", "4_8", "4_9a",
+            "4_9i"]
 
 
 def codeml(vers=None, verbose=False):
@@ -38,7 +38,7 @@ def codeml(vers=None, verbose=False):
         cml.working_dir = "temp"
         ctl_file = os.path.join("Control_files",
                                 "codeml",
-                                '.'.join([test[0], "ctl"]))
+                                ".".join([test[0], "ctl"]))
         alignment = os.path.join("Alignments", test[1])
         tree = os.path.join("Trees", test[2])
         cml.read_ctl_file(ctl_file)
@@ -48,14 +48,14 @@ def codeml(vers=None, verbose=False):
             # M2a_rel (NSsites 22) was introduced in PAML 4.6
             if test[0] == "m2a_rel" and int(version.split("_")[1][0]) < 6:
                 continue
-            print("\t{0}".format(version.replace('_', '.')))
+            print(f"\t{version.replace('_', '.')}")
             if test[0] in ["ngene2_mgene02", "ngene2_mgene34"] and \
                version == "4_6":
                 cml.tree = ".".join([cml.tree, "4.6"])
-            out_file = '.'.join(['-'.join([test[0], version]), "out"])
+            out_file = ".".join(["-".join([test[0], version]), "out"])
             cml.out_file = os.path.join("Results", "codeml", test[0], out_file)
-            bin = ''.join(["codeml", version])
-            cml.run(command=bin, verbose=verbose)
+            bin = "".join(["codeml", version])
+            cml.run(command=bin, verbose=verbose, parse=False)
 
 
 def baseml(vers=None, verbose=False):
@@ -72,37 +72,37 @@ def baseml(vers=None, verbose=False):
         print(test[0])
         bml = baseml.Baseml()
         for version in versions:
-            print("\t{0}".format(version.replace('_', '.')))
+            print(f"\t{version.replace('_', '.')}")
             if test[1] is not None:
                 for n in test[1]:
                     if (version in ["4_3", "4_4", "4_4c", "4_5"] and
                             test[0] == "nparK" and n in [3, 4]):
                         continue
-                    print("\t\tn = {0}".format(n))
+                    print(f"\t\tn = {n}")
                     ctl_file = (os.path.join("Control_files", "baseml",
-                                "{0}{1}.ctl".format(test[0], n)))
+                                f"{test[0]}{n}.ctl"))
                     bml.read_ctl_file(ctl_file)
                     bml.alignment = alignment
                     bml.tree = tree
-                    out_file = "{0}{1}-{2}.out".format(test[0], n, version)
+                    out_file = f"{test[0]}{n}-{version}.out"
                     bml.out_file = (os.path.join("Results", "baseml", test[0],
                                     out_file))
-                    bin = "baseml{0}".format(version)
-                    bml.run(command=bin, verbose=verbose)
+                    bin = f"baseml{version}"
+                    bml.run(command=bin, verbose=verbose, parse=False)
             else:
                 if (version in ["4_3", "4_4", "4_4c", "4_5"] and
                         test[0] == "alpha1rho1"):
                     continue
                 ctl_file = (os.path.join("Control_files", "baseml",
-                            "{0}.ctl".format(test[0])))
+                            f"{test[0]}.ctl"))
                 bml.read_ctl_file(ctl_file)
                 bml.alignment = alignment
                 bml.tree = tree
-                out_file = "{0}-{1}.out".format(test[0], version)
+                out_file = f"{test[0]}-{version}.out"
                 bml.out_file = (os.path.join("Results", "baseml", test[0],
                                 out_file))
-                bin = "baseml{0}".format(version)
-                bml.run(command=bin, verbose=verbose)
+                bin = f"baseml{version}"
+                bml.run(command=bin, verbose=verbose, parse=False)
 
 
 def yn00(vers=None, verbose=False):
@@ -111,19 +111,19 @@ def yn00(vers=None, verbose=False):
         versions = [vers]
     else:
         versions = VERSIONS
-    tests = ["yn00", "yn00_long"]
+    tests = ["yn00", "yn00_long", "yn00_dotted", "yn00_dottednum"]
     for test in tests:
-        print(test[0])
+        print(test)
         yn = yn00.Yn00()
         for version in versions:
-            print("\t{0}".format(version.replace('_', '.')))
+            print(f"\t{version.replace('_', '.')}")
             ctl_file = (os.path.join("Control_files", "yn00",
-                        "{0}.ctl".format(test)))
+                        f"{test}.ctl"))
             yn.read_ctl_file(ctl_file)
-            out_file = "{0}-{1}.out".format(test, version)
-            yn.out_file = os.path.join("Results", 'yn00', out_file)
-            bin = "yn00{0}".format(version)
-            yn.run(command=bin, verbose=verbose)
+            out_file = f"{test}-{version}.out"
+            yn.out_file = os.path.join("Results", "yn00", out_file)
+            bin = f"yn00{version}"
+            yn.run(command=bin, verbose=verbose, parse=False)
 
 
 def print_usage():

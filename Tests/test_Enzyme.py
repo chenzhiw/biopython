@@ -4,11 +4,13 @@
 # as part of this package.
 
 
+"""Tests for Enzyme module."""
+
 import os
 import unittest
 
 from Bio.ExPASy import Enzyme
-from Bio._py3k import StringIO
+from io import StringIO
 
 
 class TestEnzyme(unittest.TestCase):
@@ -41,11 +43,10 @@ class TestEnzyme(unittest.TestCase):
         self.assertEqual(records[2]["ID"], "4.1.1.14")
 
     def test_lipoprotein(self):
-        """Parsing ENZYME record for lipoprotein lipase (3.1.1.34)"""
-        filename = os.path.join('Enzymes', 'lipoprotein.txt')
-        handle = open(filename)
-        record = Enzyme.read(handle)
-        handle.close()
+        """Parsing ENZYME record for lipoprotein lipase (3.1.1.34)."""
+        filename = os.path.join("Enzymes", "lipoprotein.txt")
+        with open(filename) as handle:
+            record = Enzyme.read(handle)
         self.assertEqual(record["ID"], "3.1.1.34")
         self.assertEqual(record["DE"], "Lipoprotein lipase.")
         self.assertEqual(len(record["AN"]), 3)
@@ -53,9 +54,9 @@ class TestEnzyme(unittest.TestCase):
         self.assertEqual(record["AN"][1], "Diacylglycerol lipase.")
         self.assertEqual(record["AN"][2], "Diglyceride lipase.")
         self.assertEqual(record["CA"], "Triacylglycerol + H(2)O = diacylglycerol + a carboxylate.")
-        self.assertEqual(record["CC"][0], 'Hydrolyzes triacylglycerols in chylomicrons and very low-density lipoproteins (VLDL).')
+        self.assertEqual(record["CC"][0], "Hydrolyzes triacylglycerols in chylomicrons and very low-density lipoproteins (VLDL).")
         self.assertEqual(record["CC"][1], "Also hydrolyzes diacylglycerol.")
-        self.assertEqual(record['PR'], ["PDOC00110"])
+        self.assertEqual(record["PR"], ["PDOC00110"])
         self.assertEqual(record["DR"][0], ["P11151", "LIPL_BOVIN"])
         self.assertEqual(record["DR"][1], ["P11153", "LIPL_CAVPO"])
         self.assertEqual(record["DR"][2], ["P11602", "LIPL_CHICK"])
@@ -71,11 +72,10 @@ class TestEnzyme(unittest.TestCase):
                         "Did not expect:\n%s" % record)
 
     def test_proline(self):
-        """Parsing ENZYME record for proline racemase (5.1.1.4)"""
-        filename = os.path.join('Enzymes', 'proline.txt')
-        handle = open(filename)
-        record = Enzyme.read(handle)
-        handle.close()
+        """Parsing ENZYME record for proline racemase (5.1.1.4)."""
+        filename = os.path.join("Enzymes", "proline.txt")
+        with open(filename) as handle:
+            record = Enzyme.read(handle)
         self.assertEqual(record["ID"], "5.1.1.4")
         self.assertEqual(record["DE"], "Proline racemase.")
         self.assertEqual(record["CA"], "L-proline = D-proline.")
@@ -93,11 +93,10 @@ class TestEnzyme(unittest.TestCase):
                         "Did not expect:\n%s" % record)
 
     def test_valine(self):
-        """Parsing ENZYME record for valine decarboxylase (4.1.1.14)"""
-        filename = os.path.join('Enzymes', 'valine.txt')
-        handle = open(filename)
-        record = Enzyme.read(handle)
-        handle.close()
+        """Parsing ENZYME record for valine decarboxylase (4.1.1.14)."""
+        filename = os.path.join("Enzymes", "valine.txt")
+        with open(filename) as handle:
+            record = Enzyme.read(handle)
         self.assertEqual(record["ID"], "4.1.1.14")
         self.assertEqual(record["DE"], "Valine decarboxylase.")
         self.assertEqual(record["CA"], "L-valine = 2-methylpropanamine + CO(2).")
@@ -108,11 +107,10 @@ class TestEnzyme(unittest.TestCase):
                         "Did not expect:\n%s" % record)
 
     def test_lactate(self):
-        """Parsing ENZYME record for lactate racemase (5.1.2.1)"""
-        filename = os.path.join('Enzymes', 'lactate.txt')
-        handle = open(filename)
-        record = Enzyme.read(handle)
-        handle.close()
+        """Parsing ENZYME record for lactate racemase (5.1.2.1)."""
+        filename = os.path.join("Enzymes", "lactate.txt")
+        with open(filename) as handle:
+            record = Enzyme.read(handle)
         self.assertEqual(record["ID"], "5.1.2.1")
         self.assertEqual(record["DE"], "Lactate racemase.")
         self.assertEqual(len(record["AN"]), 3)

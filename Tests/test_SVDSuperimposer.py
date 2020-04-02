@@ -3,6 +3,8 @@
 # license.  Please see the LICENSE file that should have been included
 # as part of this package.
 
+"""Tests for SVDSuperimposer module."""
+
 import unittest
 
 try:
@@ -14,7 +16,7 @@ try:
 except ImportError:
     from Bio import MissingPythonDependencyError
     raise MissingPythonDependencyError(
-        "Install NumPy if you want to use Bio.SVDSuperimposer.")
+        "Install NumPy if you want to use Bio.SVDSuperimposer.") from None
 
 from Bio.SVDSuperimposer import SVDSuperimposer
 
@@ -46,7 +48,7 @@ class SVDSuperimposerTest(unittest.TestCase):
         self.assertIsNone(self.sup.init_rms)
         init_rms = 0.8049844719
         self.assertTrue(
-            float('%.3f' % self.sup.get_init_rms()), float('%.3f' % init_rms))
+            float("%.3f" % self.sup.get_init_rms()), float("%.3f" % init_rms))
 
     def test_oldTest(self):
         self.assertTrue(
@@ -76,7 +78,7 @@ class SVDSuperimposerTest(unittest.TestCase):
 
         rms = 0.00304266526014
         self.assertEqual(
-            float('%.3f' % self.sup.get_rms()), float('%.3f' % rms))
+            float("%.3f" % self.sup.get_rms()), float("%.3f" % rms))
 
         rot_get, tran_get = self.sup.get_rotran()
         self.assertTrue(

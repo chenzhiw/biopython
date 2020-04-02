@@ -3,8 +3,10 @@
 # license.  Please see the LICENSE file that should have been included
 # as part of this package.
 
+"""Tests for SeqIO Insdc module."""
+
 import unittest
-from Bio._py3k import StringIO
+from io import StringIO
 
 from Bio import SeqIO
 from Bio.Alphabet import generic_dna
@@ -29,10 +31,15 @@ class TestEmbl(unittest.TestCase):
         record = SeqIO.read("EMBL/DD231055_edited.embl", "embl")
         self.assertEqual(len(record), 315)
         # Multiple keywords:
-        self.assertEqual(record.annotations["keywords"],
-                         ['JP 2005522996-A/12', 'test-data',
-                          'lot and lots of keywords for this example',
-                          'multi-line keywords'])
+        self.assertEqual(
+            record.annotations["keywords"],
+            [
+                "JP 2005522996-A/12",
+                "test-data",
+                "lot and lots of keywords for this example",
+                "multi-line keywords",
+            ],
+        )
         self.assertEqual(record.annotations["topology"], "linear")
 
     def test_annotation3(self):
@@ -52,30 +59,27 @@ class TestEmbl(unittest.TestCase):
         self.assertNotIn("topology", record.annotations)
 
     def test_writing_empty_qualifiers(self):
-        f = SeqFeature(FeatureLocation(5, 20, strand=+1),
-                       type="region",
-                       qualifiers={"empty": None,
-                                   "zero": 0,
-                                   "one": 1,
-                                   "text": "blah"})
-        record = SeqRecord(Seq("A" * 100, generic_dna), "dummy",
-                           features=[f])
+        f = SeqFeature(
+            FeatureLocation(5, 20, strand=+1),
+            type="region",
+            qualifiers={"empty": None, "zero": 0, "one": 1, "text": "blah"},
+        )
+        record = SeqRecord(Seq("A" * 100, generic_dna), "dummy", features=[f])
         gbk = record.format("gb")
-        self.assertIn(' /empty\n', gbk)
-        self.assertIn(' /zero=0\n', gbk)
-        self.assertIn(' /one=1\n', gbk)
+        self.assertIn(" /empty\n", gbk)
+        self.assertIn(" /zero=0\n", gbk)
+        self.assertIn(" /one=1\n", gbk)
         self.assertIn(' /text="blah"\n', gbk)
 
 
 class TestEmblRewrite(unittest.TestCase):
-
     def check_rewrite(self, filename):
         old = SeqIO.read(filename, "embl")
 
         # TODO - Check these properties:
         old.dbxrefs = []
-        old.annotations['accessions'] = old.annotations['accessions'][:1]
-        del old.annotations['references']
+        old.annotations["accessions"] = old.annotations["accessions"][:1]
+        del old.annotations["references"]
 
         buffer = StringIO()
         self.assertEqual(1, SeqIO.write(old, buffer, "embl"))

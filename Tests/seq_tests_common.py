@@ -2,8 +2,7 @@
 # license.  Please see the LICENSE file that should have been included
 # as part of this package.
 
-from Bio._py3k import range
-from Bio._py3k import basestring
+"""Common code for SeqRecord object tests."""
 
 from Bio.Seq import UnknownSeq
 from Bio.SeqUtils.CheckSum import seguid
@@ -135,11 +134,10 @@ def compare_feature(old_f, new_f):
             elif isinstance(new_f.qualifiers[key], list):
                 # Maybe a string turning into a list of strings?
                 assert [old_f.qualifiers[key]] == new_f.qualifiers[key], \
-                        "%s -> %s" \
-                        % (repr(old_f.qualifiers[key]),
-                           repr(new_f.qualifiers[key]))
+                    "%s -> %s" % (repr(old_f.qualifiers[key]),
+                                  repr(new_f.qualifiers[key]))
             else:
-                assert False, "Problem with feature's '%s' qualifier" % key
+                raise ValueError("Problem with feature's '%s' qualifier" % key)
         else:
             # Should both be lists of strings...
             assert old_f.qualifiers[key] == new_f.qualifiers[key], \
@@ -150,7 +148,7 @@ def compare_feature(old_f, new_f):
 def compare_sequence(old, new):
     """Compare two Seq or DBSeq objects."""
     assert len(old) == len(new), "%i vs %i" % (len(old), len(new))
-    assert str(old) == str(new)
+    assert str(old) == str(new), "%s vs %s" % (old, new)
 
     if isinstance(old, UnknownSeq):
         assert isinstance(new, UnknownSeq)
@@ -242,14 +240,14 @@ def compare_record(old, new):
     # 'ncbi_taxon' and 'gi'.
     # TODO - address these, see Bug 2681?
     new_keys = set(new.annotations).difference(old.annotations)
-    new_keys = new_keys.difference(['cross_references', 'date',
-                                    'data_file_division', 'ncbi_taxid',
-                                    'gi'])
+    new_keys = new_keys.difference(["cross_references", "date",
+                                    "data_file_division", "ncbi_taxid",
+                                    "gi"])
     assert not new_keys, "Unexpected new annotation keys: %s" \
         % ", ".join(new_keys)
     missing_keys = set(old.annotations).difference(new.annotations)
-    missing_keys = missing_keys.difference(['ncbi_taxid',  # Can't store chimeras
-                                            'structured_comment'])
+    missing_keys = missing_keys.difference(["ncbi_taxid",  # Can't store chimeras
+                                            "structured_comment"])
     assert not missing_keys, "Unexpectedly missing annotation keys: %s" \
         % ", ".join(missing_keys)
 
@@ -274,28 +272,27 @@ def compare_record(old, new):
             old_comment = old_comment.replace("\n", " ").replace("  ", " ")
             new_comment = new_comment.replace("\n", " ").replace("  ", " ")
             assert old_comment == new_comment, \
-                "Comment annotation changed by load/retrieve\n" \
-                "Was:%s\nNow:%s" \
-                % (repr(old_comment), repr(new_comment))
+                ("Comment annotation changed by load/retrieve\n"
+                 "Was:%s\nNow:%s" % (repr(old_comment), repr(new_comment)))
         elif key in ["taxonomy", "organism", "source"]:
             # If there is a taxon id recorded, these fields get overwritten
             # by data from the taxon/taxon_name tables.  There is no
             # guarantee that they will be identical after a load/retrieve.
-            assert isinstance(new.annotations[key], basestring) \
+            assert isinstance(new.annotations[key], str) \
                 or isinstance(new.annotations[key], list)
         elif isinstance(old.annotations[key], type(new.annotations[key])):
             assert old.annotations[key] == new.annotations[key], \
                 "Annotation '%s' changed by load/retrieve\nWas:%s\nNow:%s" \
                 % (key, old.annotations[key], new.annotations[key])
-        elif isinstance(old.annotations[key], str) \
-        and isinstance(new.annotations[key], list):
+        elif (isinstance(old.annotations[key], str)
+              and isinstance(new.annotations[key], list)):
             # Any annotation which is a single string gets turned into
             # a list containing one string by BioSQL at the moment.
             assert [old.annotations[key]] == new.annotations[key], \
                 "Annotation '%s' changed by load/retrieve\nWas:%s\nNow:%s" \
                 % (key, old.annotations[key], new.annotations[key])
-        elif isinstance(old.annotations[key], list) \
-        and isinstance(new.annotations[key], str):
+        elif (isinstance(old.annotations[key], list)
+              and isinstance(new.annotations[key], str)):
             assert old.annotations[key] == [new.annotations[key]], \
                 "Annotation '%s' changed by load/retrieve\nWas:%s\nNow:%s" \
                 % (key, old.annotations[key], new.annotations[key])

@@ -5,6 +5,8 @@
 # license.  Please see the LICENSE file that should have been included
 # as part of this package.
 
+"""Tests for calling BWA."""
+
 from Bio import MissingExternalDependencyError
 import sys
 import os
@@ -20,7 +22,7 @@ from Bio.Sequencing.Applications import BwaMemCommandline
 #################################################################
 
 # Try to avoid problems when the OS is in another language
-os.environ['LANG'] = 'C'
+os.environ["LANG"] = "C"
 
 bwa_exe = None
 if sys.platform == "win32":
@@ -41,15 +43,15 @@ if sys.platform == "win32":
             if bwa_exe:
                 break
 else:
-    from Bio._py3k import getoutput
+    from subprocess import getoutput
     output = getoutput("bwa")
 
     # Since "not found" may be in another language, try and be sure this is
     # really the bwa tool's output
     bwa_found = False
-    if "not found" not in output and "bwa" in output \
-            and "alignment via Burrows-Wheeler transformation" in output:
-        bwa_exe = "bwa"
+    if "not found" not in output and "not recognized" not in output:
+        if "bwa" in output and "alignment via Burrows-Wheeler transformation" in output:
+            bwa_exe = "bwa"
     skip_aln_tests = False
     aln_output = getoutput("bwa aln")
     if "unrecognized" in aln_output:
@@ -63,10 +65,11 @@ if not bwa_exe:
 
 
 class BwaTestCase(unittest.TestCase):
-    """Class for implementing BWA test cases"""
+    """Class for implementing BWA test cases."""
+
     def setUp(self):
         self.reference_file = "BWA/human_g1k_v37_truncated.fasta"
-        self.reference_extensions = ['amb', 'ann', 'bwt', 'pac', 'sa']
+        self.reference_extensions = ["amb", "ann", "bwt", "pac", "sa"]
         self.infile1 = "BWA/HNSCC1_1_truncated.fastq"
         self.infile2 = "BWA/HNSCC1_2_truncated.fastq"
         self.saifile1 = "BWA/1.sai"
@@ -88,7 +91,7 @@ class BwaTestCase(unittest.TestCase):
                 os.remove(index_file)
 
     def test_index(self):
-        """Test for creating index files for the reference genome fasta file"""
+        """Test for creating index files for the reference genome fasta file."""
         cmdline = BwaIndexCommandline(bwa_exe)
         cmdline.set_parameter("infile", self.reference_file)
         cmdline.set_parameter("algorithm", "bwtsw")
@@ -98,20 +101,20 @@ class BwaTestCase(unittest.TestCase):
             self.assertTrue(os.path.exists(index_file),
                             "Index File %s not found"
                             % (index_file))
-        self.assertTrue('Finished constructing BWT' in str(stdout) + str(stderr),
-                        "FASTA indexing failed:\n%s\nStdout:%s\nStderr:%s\n"
-                        % (cmdline, stdout, stderr))
+        self.assertIn("Finished constructing BWT", str(stdout) + str(stderr),
+                      "FASTA indexing failed:\n%s\nStdout:%s\nStderr:%s\n"
+                      % (cmdline, stdout, stderr))
 
     def do_aln(self, in_file, out_file):
-        """Test for generating sai files given the reference and read file"""
+        """Test for generating sai files given the reference and read file."""
         cmdline = BwaAlignCommandline(bwa_exe)
         cmdline.set_parameter("reference", self.reference_file)
         cmdline.read_file = in_file
         self.assertTrue(os.path.isfile(in_file))
         stdout, stderr = cmdline(stdout=out_file)
-        self.assertTrue("fail to locate the index" not in str(stderr) + str(stdout),
-                        "Error aligning sequence to reference:\n%s\nStdout:%s\nStderr:%s\n"
-                        % (cmdline, stdout, stderr))
+        self.assertNotIn("fail to locate the index", str(stderr) + str(stdout),
+                         "Error aligning sequence to reference:\n%s\nStdout:%s\nStderr:%s\n"
+                         % (cmdline, stdout, stderr))
 
     def create_fasta_index(self):
         """Test for generating index for fasta file.
@@ -137,7 +140,7 @@ class BwaTestCase(unittest.TestCase):
             cmdline.set_parameter("sai_file", self.saifile1)
             stdout, stderr = cmdline(stdout=self.samfile1)
 
-            with open(self.samfile1, "r") as handle:
+            with open(self.samfile1) as handle:
                 headline = handle.readline()
             self.assertTrue(headline.startswith("@SQ"),
                             "Error generating sam files:\n%s\nOutput starts:%s"
@@ -159,7 +162,7 @@ class BwaTestCase(unittest.TestCase):
             cmdline.set_parameter("read_file2", self.infile2)
             stdout, stderr = cmdline(stdout=self.samfile)
 
-            with open(self.samfile, "r") as handle:
+            with open(self.samfile) as handle:
                 headline = handle.readline()
             self.assertTrue(headline.startswith("@SQ"),
                             "Error generating sam files:\n%s\nOutput starts:%s"
@@ -175,7 +178,7 @@ class BwaTestCase(unittest.TestCase):
             cmdline.set_parameter("read_file2", self.infile2)
             stdout, stderr = cmdline(stdout=self.samfile)
 
-            with open(self.samfile, "r") as handle:
+            with open(self.samfile) as handle:
                 headline = handle.readline()
             self.assertTrue(headline.startswith("@SQ"),
                             "Error generating sam files:\n%s\nOutput starts:%s"

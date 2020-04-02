@@ -13,9 +13,9 @@
 Notes about the diverses class of the restriction enzyme implementation::
 
             RestrictionType is the type of all restriction enzymes.
-        ----------------------------------------------------------------------------
+        -----------------------------------------------------------------------
             AbstractCut implements some methods that are common to all enzymes.
-        ----------------------------------------------------------------------------
+        -----------------------------------------------------------------------
             NoCut, OneCut,TwoCuts   represent the number of double strand cuts
                                     produced by the enzyme.
                                     they correspond to the 4th field of the
@@ -23,21 +23,21 @@ Notes about the diverses class of the restriction enzyme implementation::
                     0->NoCut    : the enzyme is not characterised.
                     2->OneCut   : the enzyme produce one double strand cut.
                     4->TwoCuts  : two double strand cuts.
-        ----------------------------------------------------------------------------
+        -----------------------------------------------------------------------
             Meth_Dep, Meth_Undep    represent the methylation susceptibility to
                                     the enzyme.
                                     Not implemented yet.
-        ----------------------------------------------------------------------------
+        -----------------------------------------------------------------------
             Palindromic,            if the site is palindromic or not.
             NotPalindromic          allow some optimisations of the code.
                                     No need to check the reverse strand
                                     with palindromic sites.
-        ----------------------------------------------------------------------------
+        -----------------------------------------------------------------------
             Unknown, Blunt,         represent the overhang.
             Ov5, Ov3                Unknown is here for symmetry reasons and
                                     correspond to enzymes that are not
                                     characterised in rebase.
-        ----------------------------------------------------------------------------
+        -----------------------------------------------------------------------
             Defined, Ambiguous,     represent the sequence of the overhang.
             NotDefined
                                     NotDefined is for enzymes not characterised
@@ -66,7 +66,7 @@ Notes about the diverses class of the restriction enzyme implementation::
                              YTTAA^R
                    Accordingly, blunt enzymes are always Defined even
                    when they cut outside their restriction site.
-        ----------------------------------------------------------------------------
+        -----------------------------------------------------------------------
             Not_available,          as found in rebase file emboss_r.NNN files.
             Commercially_available
                                     allow the selection of the enzymes
@@ -78,17 +78,12 @@ Notes about the diverses class of the restriction enzyme implementation::
 
                                     the list of suppliers is extracted from
                                     emboss_s.NNN
-        ----------------------------------------------------------------------------
+        -----------------------------------------------------------------------
 
 """
 
-from __future__ import print_function
 
 import warnings
-
-from Bio._py3k import zip
-from Bio._py3k import filter
-from Bio._py3k import range
 
 import re
 import itertools
@@ -115,7 +110,7 @@ def _check_bases(seq_string):
 
     Returns the string WITH A LEADING SPACE (!). This is for backwards
     compatibility, and may in part be explained by the fact that
-    Bio.Restriction doesn't use zero based counting.
+    ``Bio.Restriction`` doesn't use zero based counting.
     """
     # Remove white space and make upper case:
     seq_string = "".join(seq_string.split()).upper()
@@ -128,20 +123,31 @@ def _check_bases(seq_string):
     return " " + seq_string
 
 
-matching = {'A': 'ARWMHVDN', 'C': 'CYSMHBVN', 'G': 'GRSKBVDN',
-            'T': 'TYWKHBDN', 'R': 'ABDGHKMNSRWV', 'Y': 'CBDHKMNSTWVY',
-            'W': 'ABDHKMNRTWVY', 'S': 'CBDGHKMNSRVY', 'M': 'ACBDHMNSRWVY',
-            'K': 'BDGHKNSRTWVY', 'H': 'ACBDHKMNSRTWVY',
-            'B': 'CBDGHKMNSRTWVY', 'V': 'ACBDGHKMNSRWVY',
-            'D': 'ABDGHKMNSRTWVY', 'N': 'ACBDGHKMNSRTWVY'}
+matching = {
+    "A": "ARWMHVDN",
+    "C": "CYSMHBVN",
+    "G": "GRSKBVDN",
+    "T": "TYWKHBDN",
+    "R": "ABDGHKMNSRWV",
+    "Y": "CBDHKMNSTWVY",
+    "W": "ABDHKMNRTWVY",
+    "S": "CBDGHKMNSRVY",
+    "M": "ACBDHMNSRWVY",
+    "K": "BDGHKNSRTWVY",
+    "H": "ACBDHKMNSRTWVY",
+    "B": "CBDGHKMNSRTWVY",
+    "V": "ACBDGHKMNSRWVY",
+    "D": "ABDGHKMNSRTWVY",
+    "N": "ACBDGHKMNSRTWVY",
+}
 
 DNA = Seq
 
 
-class FormattedSeq(object):
-    """FormattedSeq(seq, [linear=True])-> new FormattedSeq.
+class FormattedSeq:
+    """A linear or ciruclar sequence object for restriction analysis.
 
-    Translate a Bio.Seq into a formatted sequence to be used with Restriction.
+    Translates a Bio.Seq into a formatted sequence to be used with Restriction.
 
     Roughly: remove anything which is not IUPAC alphabet and then add a space
              in front of the sequence to get a biological index instead of a
@@ -152,11 +158,11 @@ class FormattedSeq(object):
     """
 
     def __init__(self, seq, linear=True):
-        """FormattedSeq(seq, [linear=True])-> new FormattedSeq.
+        """Initialize ``FormattedSeq`` with sequence and topology (optional).
 
-        seq is either a Bio.Seq, Bio.MutableSeq or a FormattedSeq.
-        if seq is a FormattedSeq, linear will have no effect on the
-        shape of the sequence.
+        ``seq`` is either a ``Bio.Seq``, ``Bio.MutableSeq`` or a
+        ``FormattedSeq``. If ``seq`` is a ``FormattedSeq``, ``linear``
+        will have no effect on the shape of the sequence.
         """
         if isinstance(seq, (Seq, MutableSeq)):
             stringy = str(seq)
@@ -173,16 +179,21 @@ class FormattedSeq(object):
             self.alphabet = seq.alphabet
             self.klass = seq.klass
         else:
-            raise TypeError('expected Seq or MutableSeq, got %s' % type(seq))
+            raise TypeError("expected Seq or MutableSeq, got %s" % type(seq))
 
     def __len__(self):
+        """Return length of ``FormattedSeq``.
+
+        ``FormattedSeq`` has a leading space, thus substract 1.
+        """
         return len(self.data) - 1
 
     def __repr__(self):
-        return 'FormattedSeq(%s, linear=%s)' % (repr(self[1:]),
-                                                repr(self.linear))
+        """Represent ``FormattedSeq`` class as a string."""
+        return "FormattedSeq(%s, linear=%s)" % (repr(self[1:]), repr(self.linear))
 
     def __eq__(self, other):
+        """Implement equality operator for ``FormattedSeq`` object."""
         if isinstance(other, FormattedSeq):
             if repr(self) == repr(other):
                 return True
@@ -232,6 +243,18 @@ class FormattedSeq(object):
         return [(i.start(), i.group) for i in re.finditer(pattern, data)]
 
     def __getitem__(self, i):
+        """Return substring of ``FormattedSeq``.
+
+        The class of the returned object is the class of the respective
+        sequence. Note that due to the leading space, indexing is 1-based:
+
+        >>> from Bio.Seq import Seq
+        >>> from Bio.Restriction.Restriction import FormattedSeq
+        >>> f_seq = FormattedSeq(Seq('ATGCATGC'))
+        >>> f_seq[1]
+        Seq('A')
+
+        """
         if self.lower:
             return self.klass((self.data[i]).lower(), self.alphabet)
         return self.klass(self.data[i], self.alphabet)
@@ -243,7 +266,7 @@ class RestrictionType(type):
     Implement the operator methods.
     """
 
-    def __init__(cls, name='', bases=(), dct=None):
+    def __init__(cls, name="", bases=(), dct=None):
         """Initialize RestrictionType instance.
 
         Not intended to be used in normal operation. The enzymes are
@@ -251,11 +274,10 @@ class RestrictionType(type):
         See below.
         """
         if "-" in name:
-            raise ValueError("Problem with hyphen in %s as enzyme name"
-                             % repr(name))
+            raise ValueError("Problem with hyphen in %s as enzyme name" % repr(name))
         # 2011/11/26 - Nobody knows what this call was supposed to accomplish,
         # but all unit tests seem to pass without it.
-        # super(RestrictionType, cls).__init__(cls, name, bases, dct)
+        # super().__init__(cls, name, bases, dct)
         try:
             cls.compsite = re.compile(cls.compsite)
         except AttributeError:
@@ -264,8 +286,9 @@ class RestrictionType(type):
             # tried to automatically general documentation for them)
             pass
         except Exception:
-            raise ValueError("Problem with regular expression, re.compiled(%s)"
-                             % repr(cls.compsite))
+            raise ValueError(
+                "Problem with regular expression, re.compiled(%r)" % cls.compsite
+            ) from None
 
     def __add__(cls, other):
         """Add restriction enzyme to a RestrictionBatch().
@@ -280,43 +303,35 @@ class RestrictionType(type):
         else:
             raise TypeError
 
-    def __div__(cls, other):
+    def __truediv__(cls, other):
         """Override '/' operator to use as search method.
 
+        >>> from Bio.Restriction import EcoRI
         >>> EcoRI/Seq('GAATTC')
         [2]
+
         Returns RE.search(other).
-        """
-        return cls.search(other)
-
-    def __rdiv__(cls, other):
-        """Override division with reversed operands to use as search method.
-
-        >>> Seq('GAATTC')/EcoRI
-        [2]
-        Returns RE.search(other).
-        """
-        return cls.search(other)
-
-    def __truediv__(cls, other):
-        """Override Python 3 division operator to use as search method.
-
-        Like __div__.
         """
         return cls.search(other)
 
     def __rtruediv__(cls, other):
-        """As __truediv___, with reversed operands.
+        """Override division with reversed operands to use as search method.
 
-        Like __rdiv__.
+        >>> from Bio.Restriction import EcoRI
+        >>> Seq('GAATTC')/EcoRI
+        [2]
+
+        Returns RE.search(other).
         """
         return cls.search(other)
 
     def __floordiv__(cls, other):
         """Override '//' operator to use as catalyse method.
 
+        >>> from Bio.Restriction import EcoRI
         >>> EcoRI//Seq('GAATTC')
-        (Seq('G', Alphabet()), Seq('AATTC', Alphabet()))
+        (Seq('G'), Seq('AATTC'))
+
         Returns RE.catalyse(other).
         """
         return cls.catalyse(other)
@@ -324,8 +339,10 @@ class RestrictionType(type):
     def __rfloordiv__(cls, other):
         """As __floordiv__, with reversed operands.
 
+        >>> from Bio.Restriction import EcoRI
         >>> Seq('GAATTC')//EcoRI
-        (Seq('G', Alphabet()), Seq('AATTC', Alphabet()))
+        (Seq('G'), Seq('AATTC'))
+
         Returns RE.catalyse(other).
         """
         return cls.catalyse(other)
@@ -353,8 +370,11 @@ class RestrictionType(type):
             return 0
 
     def __hash__(cls):
-        # Python default is to use id(...)
-        # This is consistent with the __eq__ implementation
+        """Implement ``hash()`` method for ``RestrictionType``.
+
+        Python default is to use ``id(...)``
+        This is consistent with the ``__eq__`` implementation
+        """
         return id(cls)
 
     def __eq__(cls, other):
@@ -374,6 +394,8 @@ class RestrictionType(type):
         All the other-> True
 
         WARNING - This is not the inverse of the __eq__ method
+
+        >>> from Bio.Restriction import SacI, SstI
         >>> SacI != SstI  # true isoschizomers
         False
         >>> SacI == SstI
@@ -391,6 +413,8 @@ class RestrictionType(type):
 
         neoschizomer : same recognition site, different restriction. -> True
         all the others :                                             -> False
+
+        >>> from Bio.Restriction import SmaI, XmaI
         >>> SmaI >> XmaI
         True
         """
@@ -405,12 +429,13 @@ class RestrictionType(type):
         """Override '%' operator to test for compatible overhangs.
 
         True if a and b have compatible overhang.
+
+        >>> from Bio.Restriction import XhoI, SalI
         >>> XhoI % SalI
         True
         """
         if not isinstance(other, RestrictionType):
-            raise TypeError(
-                  'expected RestrictionType, got %s instead' % type(other))
+            raise TypeError("expected RestrictionType, got %s instead" % type(other))
         return cls._mod1(other)
 
     def __ge__(cls, other):
@@ -419,6 +444,8 @@ class RestrictionType(type):
         Override '>='. a is greater or equal than b if the a site is longer
         than b site. If their site have the same length sort by alphabetical
         order of their names.
+
+        >>> from Bio.Restriction import EcoRI, EcoRV
         >>> EcoRI.size
         6
         >>> EcoRV.size
@@ -439,8 +466,9 @@ class RestrictionType(type):
         """Compare length of recognition site of two enzymes.
 
         Override '>'. Sorting order:
-            1. size of the recognition site.
-            2. if equal size, alphabetical order of the names.
+
+        1. size of the recognition site.
+        2. if equal size, alphabetical order of the names.
 
         """
         if not isinstance(other, RestrictionType):
@@ -456,8 +484,9 @@ class RestrictionType(type):
         """Compare length of recognition site of two enzymes.
 
         Override '<='. Sorting order:
-            1. size of the recognition site.
-            2. if equal size, alphabetical order of the names.
+
+        1. size of the recognition site.
+        2. if equal size, alphabetical order of the names.
 
         """
         if not isinstance(other, RestrictionType):
@@ -473,8 +502,9 @@ class RestrictionType(type):
         """Compare length of recognition site of two enzymes.
 
         Override '<'. Sorting order:
-            1. size of the recognition site.
-            2. if equal size, alphabetical order of the names.
+
+        1. size of the recognition site.
+        2. if equal size, alphabetical order of the names.
 
         """
         if not isinstance(other, RestrictionType):
@@ -538,6 +568,8 @@ class AbstractCut(RestrictionType):
         else False.
 
         Equischizomer: same site, same position of restriction.
+
+        >>> from Bio.Restriction import SacI, SstI, SmaI, XmaI
         >>> SacI.is_equischizomer(SstI)
         True
         >>> SmaI.is_equischizomer(XmaI)
@@ -562,6 +594,8 @@ class AbstractCut(RestrictionType):
         True if other has the same recognition site, else False.
 
         Isoschizomer: same site.
+
+        >>> from Bio.Restriction import SacI, SstI, SmaI, XmaI
         >>> SacI.is_isoschizomer(SstI)
         True
         >>> SmaI.is_isoschizomer(XmaI)
@@ -703,11 +737,12 @@ class NoCut(AbstractCut):
         """Return a list of the enzyme's characteristics as tuple.
 
         the tuple contains the attributes:
-         - fst5 -> first 5' cut ((current strand) or None
-         - fst3 -> first 3' cut (complementary strand) or None
-         - scd5 -> second 5' cut (current strand) or None
-         - scd5 -> second 3' cut (complementary strand) or None
-         - site -> recognition site.
+
+        - fst5 -> first 5' cut ((current strand) or None
+        - fst3 -> first 3' cut (complementary strand) or None
+        - scd5 -> second 5' cut (current strand) or None
+        - scd5 -> second 3' cut (complementary strand) or None
+        - site -> recognition site.
 
         """
         return None, None, None, None, cls.site
@@ -781,11 +816,12 @@ class OneCut(AbstractCut):
         """Return a list of the enzyme's characteristics as tuple.
 
         The tuple contains the attributes:
-         - fst5 -> first 5' cut ((current strand) or None
-         - fst3 -> first 3' cut (complementary strand) or None
-         - scd5 -> second 5' cut (current strand) or None
-         - scd5 -> second 3' cut (complementary strand) or None
-         - site -> recognition site.
+
+        - fst5 -> first 5' cut ((current strand) or None
+        - fst3 -> first 3' cut (complementary strand) or None
+        - scd5 -> second 5' cut (current strand) or None
+        - scd5 -> second 3' cut (complementary strand) or None
+        - site -> recognition site.
 
         """
         return cls.fst5, cls.fst3, None, None, cls.site
@@ -861,11 +897,12 @@ class TwoCuts(AbstractCut):
         """Return a list of the enzyme's characteristics as tuple.
 
         the tuple contains the attributes:
-         - fst5 -> first 5' cut ((current strand) or None
-         - fst3 -> first 3' cut (complementary strand) or None
-         - scd5 -> second 5' cut (current strand) or None
-         - scd5 -> second 3' cut (complementary strand) or None
-         - site -> recognition site.
+
+        - fst5 -> first 5' cut ((current strand) or None
+        - fst3 -> first 3' cut (complementary strand) or None
+        - scd5 -> second 5' cut (current strand) or None
+        - scd5 -> second 3' cut (complementary strand) or None
+        - site -> recognition site.
 
         """
         return cls.fst5, cls.fst3, cls.scd5, cls.scd3, cls.site
@@ -959,9 +996,9 @@ class NonPalindromic(AbstractCut):
 
         for start, group in iterator:
             if group(s):
-                cls.results += [r for r in modif(start)]
+                cls.results += list(modif(start))
             else:
-                cls.on_minus += [r for r in revmodif(start)]
+                cls.on_minus += list(revmodif(start))
         cls.results += cls.on_minus
 
         if cls.results:
@@ -987,8 +1024,6 @@ class Unknown(AbstractCut):
     def catalyse(cls, dna, linear=True):
         """List the sequence fragments after cutting dna with enzyme.
 
-        RE.catalyze(dna, linear=True) -> tuple of DNA.
-
         Return a tuple of dna as will be produced by using RE to restrict the
         dna.
 
@@ -997,8 +1032,8 @@ class Unknown(AbstractCut):
         If linear is False, the sequence is considered to be circular and the
         output will be modified accordingly.
         """
-        raise NotImplementedError('%s restriction is unknown.'
-                                  % cls.__name__)
+        raise NotImplementedError("%s restriction is unknown." % cls.__name__)
+
     catalyze = catalyse
 
     @classmethod
@@ -1008,9 +1043,10 @@ class Unknown(AbstractCut):
         True if the enzyme produces blunt end.
 
         Related methods:
-         - RE.is_3overhang()
-         - RE.is_5overhang()
-         - RE.is_unknown()
+
+        - RE.is_3overhang()
+        - RE.is_5overhang()
+        - RE.is_unknown()
 
         """
         return False
@@ -1022,9 +1058,10 @@ class Unknown(AbstractCut):
         True if the enzyme produces 5' overhang sticky end.
 
         Related methods:
-         - RE.is_3overhang()
-         - RE.is_blunt()
-         - RE.is_unknown()
+
+        - RE.is_3overhang()
+        - RE.is_blunt()
+        - RE.is_unknown()
 
         """
         return False
@@ -1036,9 +1073,10 @@ class Unknown(AbstractCut):
         True if the enzyme produces 3' overhang sticky end.
 
         Related methods:
-         - RE.is_5overhang()
-         - RE.is_blunt()
-         - RE.is_unknown()
+
+        - RE.is_5overhang()
+        - RE.is_blunt()
+        - RE.is_unknown()
 
         """
         return False
@@ -1049,7 +1087,7 @@ class Unknown(AbstractCut):
 
         Can be "3' overhang", "5' overhang", "blunt", "unknown".
         """
-        return 'unknown'
+        return "unknown"
 
     @classmethod
     def compatible_end(cls):
@@ -1080,8 +1118,6 @@ class Blunt(AbstractCut):
     def catalyse(cls, dna, linear=True):
         """List the sequence fragments after cutting dna with enzyme.
 
-        RE.catalyze(dna, linear=True) -> tuple of DNA.
-
         Return a tuple of dna as will be produced by using RE to restrict the
         dna.
 
@@ -1093,28 +1129,28 @@ class Blunt(AbstractCut):
         r = cls.search(dna, linear)
         d = cls.dna
         if not r:
-            return d[1:],
+            return (d[1:],)
         fragments = []
         length = len(r) - 1
         if d.is_linear():
             #
             #   START of the sequence to FIRST site.
             #
-            fragments.append(d[1:r[0]])
+            fragments.append(d[1 : r[0]])
             if length:
                 #
                 #   if more than one site add them.
                 #
-                fragments += [d[r[x]:r[x + 1]] for x in range(length)]
+                fragments += [d[r[x] : r[x + 1]] for x in range(length)]
             #
             #   LAST site to END of the sequence.
             #
-            fragments.append(d[r[-1]:])
+            fragments.append(d[r[-1] :])
         else:
             #
             #   circular : bridge LAST site to FIRST site.
             #
-            fragments.append(d[r[-1]:] + d[1:r[0]])
+            fragments.append(d[r[-1] :] + d[1 : r[0]])
             if not length:
                 #
                 #   one site we finish here.
@@ -1123,8 +1159,9 @@ class Blunt(AbstractCut):
             #
             #   add the others.
             #
-            fragments += [d[r[x]:r[x + 1]] for x in range(length)]
+            fragments += [d[r[x] : r[x + 1]] for x in range(length)]
         return tuple(fragments)
+
     catalyze = catalyse
 
     @classmethod
@@ -1134,9 +1171,10 @@ class Blunt(AbstractCut):
         True if the enzyme produces blunt end.
 
         Related methods:
-         - RE.is_3overhang()
-         - RE.is_5overhang()
-         - RE.is_unknown()
+
+        - RE.is_3overhang()
+        - RE.is_5overhang()
+        - RE.is_unknown()
 
         """
         return True
@@ -1148,9 +1186,10 @@ class Blunt(AbstractCut):
         True if the enzyme produces 5' overhang sticky end.
 
         Related methods:
-         - RE.is_3overhang()
-         - RE.is_blunt()
-         - RE.is_unknown()
+
+        - RE.is_3overhang()
+        - RE.is_blunt()
+        - RE.is_unknown()
 
         """
         return False
@@ -1162,9 +1201,10 @@ class Blunt(AbstractCut):
         True if the enzyme produces 3' overhang sticky end.
 
         Related methods:
-         - RE.is_5overhang()
-         - RE.is_blunt()
-         - RE.is_unknown()
+
+        - RE.is_5overhang()
+        - RE.is_blunt()
+        - RE.is_unknown()
 
         """
         return False
@@ -1175,7 +1215,7 @@ class Blunt(AbstractCut):
 
         Can be "3' overhang", "5' overhang", "blunt", "unknown".
         """
-        return 'blunt'
+        return "blunt"
 
     @classmethod
     def compatible_end(cls, batch=None):
@@ -1208,8 +1248,6 @@ class Ov5(AbstractCut):
     def catalyse(cls, dna, linear=True):
         """List the sequence fragments after cutting dna with enzyme.
 
-        RE.catalyze(dna, linear=True) -> tuple of DNA.
-
         Return a tuple of dna as will be produced by using RE to restrict the
         dna.
 
@@ -1221,28 +1259,28 @@ class Ov5(AbstractCut):
         r = cls.search(dna, linear)
         d = cls.dna
         if not r:
-            return d[1:],
+            return (d[1:],)
         length = len(r) - 1
         fragments = []
         if d.is_linear():
             #
             #   START of the sequence to FIRST site.
             #
-            fragments.append(d[1:r[0]])
+            fragments.append(d[1 : r[0]])
             if length:
                 #
                 #   if more than one site add them.
                 #
-                fragments += [d[r[x]:r[x + 1]] for x in range(length)]
+                fragments += [d[r[x] : r[x + 1]] for x in range(length)]
             #
             #   LAST site to END of the sequence.
             #
-            fragments.append(d[r[-1]:])
+            fragments.append(d[r[-1] :])
         else:
             #
             #   circular : bridge LAST site to FIRST site.
             #
-            fragments.append(d[r[-1]:] + d[1:r[0]])
+            fragments.append(d[r[-1] :] + d[1 : r[0]])
             if not length:
                 #
                 #   one site we finish here.
@@ -1251,8 +1289,9 @@ class Ov5(AbstractCut):
             #
             #   add the others.
             #
-            fragments += [d[r[x]:r[x + 1]] for x in range(length)]
+            fragments += [d[r[x] : r[x + 1]] for x in range(length)]
         return tuple(fragments)
+
     catalyze = catalyse
 
     @classmethod
@@ -1262,9 +1301,10 @@ class Ov5(AbstractCut):
         True if the enzyme produces blunt end.
 
         Related methods:
-         - RE.is_3overhang()
-         - RE.is_5overhang()
-         - RE.is_unknown()
+
+        - RE.is_3overhang()
+        - RE.is_5overhang()
+        - RE.is_unknown()
 
         """
         return False
@@ -1276,9 +1316,10 @@ class Ov5(AbstractCut):
         True if the enzyme produces 5' overhang sticky end.
 
         Related methods:
-         - RE.is_3overhang()
-         - RE.is_blunt()
-         - RE.is_unknown()
+
+        - RE.is_3overhang()
+        - RE.is_blunt()
+        - RE.is_unknown()
 
         """
         return True
@@ -1290,9 +1331,10 @@ class Ov5(AbstractCut):
         True if the enzyme produces 3' overhang sticky end.
 
         Related methods:
-         - RE.is_5overhang()
-         - RE.is_blunt()
-         - RE.is_unknown()
+
+        - RE.is_5overhang()
+        - RE.is_blunt()
+        - RE.is_unknown()
 
         """
         return False
@@ -1310,8 +1352,7 @@ class Ov5(AbstractCut):
         """List all enzymes that produce compatible ends for the enzyme."""
         if not batch:
             batch = AllEnzymes
-        r = sorted(x for x in iter(AllEnzymes) if x.is_5overhang() and
-                   x % cls)
+        r = sorted(x for x in iter(AllEnzymes) if x.is_5overhang() and x % cls)
         return r
 
     @classmethod
@@ -1340,8 +1381,6 @@ class Ov3(AbstractCut):
     def catalyse(cls, dna, linear=True):
         """List the sequence fragments after cutting dna with enzyme.
 
-        RE.catalyze(dna, linear=True) -> tuple of DNA.
-
         Return a tuple of dna as will be produced by using RE to restrict the
         dna.
 
@@ -1353,28 +1392,28 @@ class Ov3(AbstractCut):
         r = cls.search(dna, linear)
         d = cls.dna
         if not r:
-            return d[1:],
+            return (d[1:],)
         fragments = []
         length = len(r) - 1
         if d.is_linear():
             #
             #   START of the sequence to FIRST site.
             #
-            fragments.append(d[1:r[0]])
+            fragments.append(d[1 : r[0]])
             if length:
                 #
                 #   if more than one site add them.
                 #
-                fragments += [d[r[x]:r[x + 1]] for x in range(length)]
+                fragments += [d[r[x] : r[x + 1]] for x in range(length)]
             #
             #   LAST site to END of the sequence.
             #
-            fragments.append(d[r[-1]:])
+            fragments.append(d[r[-1] :])
         else:
             #
             #   circular : bridge LAST site to FIRST site.
             #
-            fragments.append(d[r[-1]:] + d[1:r[0]])
+            fragments.append(d[r[-1] :] + d[1 : r[0]])
             if not length:
                 #
                 #   one site we finish here.
@@ -1383,8 +1422,9 @@ class Ov3(AbstractCut):
             #
             #   add the others.
             #
-            fragments += [d[r[x]:r[x + 1]] for x in range(length)]
+            fragments += [d[r[x] : r[x + 1]] for x in range(length)]
         return tuple(fragments)
+
     catalyze = catalyse
 
     @classmethod
@@ -1394,9 +1434,10 @@ class Ov3(AbstractCut):
         True if the enzyme produces blunt end.
 
         Related methods:
-         - RE.is_3overhang()
-         - RE.is_5overhang()
-         - RE.is_unknown()
+
+        - RE.is_3overhang()
+        - RE.is_5overhang()
+        - RE.is_unknown()
 
         """
         return False
@@ -1408,9 +1449,10 @@ class Ov3(AbstractCut):
         True if the enzyme produces 5' overhang sticky end.
 
         Related methods:
-         - RE.is_3overhang()
-         - RE.is_blunt()
-         - RE.is_unknown()
+
+        - RE.is_3overhang()
+        - RE.is_blunt()
+        - RE.is_unknown()
 
         """
         return False
@@ -1422,9 +1464,10 @@ class Ov3(AbstractCut):
         True if the enzyme produces 3' overhang sticky end.
 
         Related methods:
-         - RE.is_5overhang()
-         - RE.is_blunt()
-         - RE.is_unknown()
+
+        - RE.is_5overhang()
+        - RE.is_blunt()
+        - RE.is_unknown()
 
         """
         return True
@@ -1442,8 +1485,7 @@ class Ov3(AbstractCut):
         """List all enzymes that produce compatible ends for the enzyme."""
         if not batch:
             batch = AllEnzymes
-        r = sorted(x for x in iter(AllEnzymes) if x.is_3overhang() and
-                   x % cls)
+        r = sorted(x for x in iter(AllEnzymes) if x.is_3overhang() and x % cls)
         return r
 
     @classmethod
@@ -1496,8 +1538,8 @@ class Defined(AbstractCut):
         drop = itertools.dropwhile
         take = itertools.takewhile
         if cls.dna.is_linear():
-            cls.results = [x for x in drop(lambda x:x <= 1, cls.results)]
-            cls.results = [x for x in take(lambda x:x <= length, cls.results)]
+            cls.results = list(drop(lambda x: x <= 1, cls.results))
+            cls.results = list(take(lambda x: x <= length, cls.results))
         else:
             for index, location in enumerate(cls.results):
                 if location < 1:
@@ -1520,8 +1562,9 @@ class Defined(AbstractCut):
         the site.
 
         Related methods:
-         - RE.is_ambiguous()
-         - RE.is_unknown()
+
+        - RE.is_ambiguous()
+        - RE.is_unknown()
 
         """
         return True
@@ -1535,8 +1578,9 @@ class Defined(AbstractCut):
         the site.
 
         Related methods:
-         - RE.is_defined()
-         - RE.is_unknown()
+
+        - RE.is_defined()
+        - RE.is_unknown()
 
         """
         return False
@@ -1549,8 +1593,9 @@ class Defined(AbstractCut):
         i.e. the recognition site has not been characterised yet.
 
         Related methods:
-         - RE.is_defined()
-         - RE.is_ambiguous()
+
+        - RE.is_defined()
+        - RE.is_ambiguous()
 
         """
         return False
@@ -1563,6 +1608,7 @@ class Defined(AbstractCut):
         represented as '^' and the cut on the (-) strand as '_'.
         ie:
 
+        >>> from Bio.Restriction import EcoRI, KpnI, EcoRV, SnaI
         >>> EcoRI.elucidate()   # 5' overhang
         'G^AATT_C'
         >>> KpnI.elucidate()    # 3' overhang
@@ -1578,21 +1624,21 @@ class Defined(AbstractCut):
         f3 = cls.fst3
         site = cls.site
         if cls.cut_twice():
-            re = 'cut twice, not yet implemented sorry.'
+            re = "cut twice, not yet implemented sorry."
         elif cls.is_5overhang():
             if f5 == f3 == 0:
-                re = 'N^' + cls.site + '_N'
+                re = "N^" + cls.site + "_N"
             elif f3 == 0:
-                re = site[:f5] + '^' + site[f5:] + '_N'
+                re = site[:f5] + "^" + site[f5:] + "_N"
             else:
-                re = site[:f5] + '^' + site[f5:f3] + '_' + site[f3:]
+                re = site[:f5] + "^" + site[f5:f3] + "_" + site[f3:]
         elif cls.is_blunt():
-            re = site[:f5] + '^_' + site[f5:]
+            re = site[:f5] + "^_" + site[f5:]
         else:
             if f5 == f3 == 0:
-                re = 'N_' + site + '^N'
+                re = "N_" + site + "^N"
             else:
-                re = site[:f3] + '_' + site[f3:f5] + '^' + site[f5:]
+                re = site[:f3] + "_" + site[f3:f5] + "^" + site[f5:]
         return re
 
     @classmethod
@@ -1641,8 +1687,8 @@ class Ambiguous(AbstractCut):
         drop = itertools.dropwhile
         take = itertools.takewhile
         if cls.dna.is_linear():
-            cls.results = [x for x in drop(lambda x: x <= 1, cls.results)]
-            cls.results = [x for x in take(lambda x: x <= length, cls.results)]
+            cls.results = list(drop(lambda x: x <= 1, cls.results))
+            cls.results = list(take(lambda x: x <= length, cls.results))
         else:
             for index, location in enumerate(cls.results):
                 if location < 1:
@@ -1665,8 +1711,9 @@ class Ambiguous(AbstractCut):
         the site.
 
         Related methods:
-         - RE.is_ambiguous()
-         - RE.is_unknown()
+
+        - RE.is_ambiguous()
+        - RE.is_unknown()
 
         """
         return False
@@ -1680,8 +1727,9 @@ class Ambiguous(AbstractCut):
         the site.
 
         Related methods:
-         - RE.is_defined()
-         - RE.is_unknown()
+
+        - RE.is_defined()
+        - RE.is_unknown()
 
         """
         return True
@@ -1694,8 +1742,9 @@ class Ambiguous(AbstractCut):
         i.e. the recognition site has not been characterised yet.
 
         Related methods:
-         - RE.is_defined()
-         - RE.is_ambiguous()
+
+        - RE.is_defined()
+        - RE.is_ambiguous()
 
         """
         return False
@@ -1716,12 +1765,12 @@ class Ambiguous(AbstractCut):
         else:
             se = cls.ovhgseq
             for base in se:
-                if base in 'ATCG':
+                if base in "ATCG":
                     pass
-                if base in 'N':
-                    se = '.'.join(se.split('N'))
-                if base in 'RYWMSKHDBV':
-                    expand = '[' + matching[base] + ']'
+                if base in "N":
+                    se = ".".join(se.split("N"))
+                if base in "RYWMSKHDBV":
+                    expand = "[" + matching[base] + "]"
                     se = expand.join(se.split(base))
             if re.match(se, other.ovhgseq):
                 return True
@@ -1736,6 +1785,7 @@ class Ambiguous(AbstractCut):
         represented as '^' and the cut on the (-) strand as '_'.
         ie:
 
+        >>> from Bio.Restriction import EcoRI, KpnI, EcoRV, SnaI
         >>> EcoRI.elucidate()   # 5' overhang
         'G^AATT_C'
         >>> KpnI.elucidate()    # 3' overhang
@@ -1752,51 +1802,47 @@ class Ambiguous(AbstractCut):
         length = len(cls)
         site = cls.site
         if cls.cut_twice():
-            re = 'cut twice, not yet implemented sorry.'
+            re = "cut twice, not yet implemented sorry."
         elif cls.is_5overhang():
             if f3 == f5 == 0:
-                re = 'N^' + site + '_N'
+                re = "N^" + site + "_N"
             elif 0 <= f5 <= length and 0 <= f3 + length <= length:
-                re = site[:f5] + '^' + site[f5:f3] + '_' + site[f3:]
+                re = site[:f5] + "^" + site[f5:f3] + "_" + site[f3:]
             elif 0 <= f5 <= length:
-                re = site[:f5] + '^' + site[f5:] + f3 * 'N' + '_N'
+                re = site[:f5] + "^" + site[f5:] + f3 * "N" + "_N"
             elif 0 <= f3 + length <= length:
-                re = 'N^' + abs(f5) * 'N' + site[:f3] + '_' + site[f3:]
+                re = "N^" + abs(f5) * "N" + site[:f3] + "_" + site[f3:]
             elif f3 + length < 0:
-                re = 'N^' * abs(f5) * 'N' + '_' + abs(length + f3) * 'N' + site
+                re = "N^" * abs(f5) * "N" + "_" + abs(length + f3) * "N" + site
             elif f5 > length:
-                re = site + (f5 - length) * 'N' + '^' + (length +
-                                                         f3 - f5) * 'N' + '_N'
+                re = site + (f5 - length) * "N" + "^" + (length + f3 - f5) * "N" + "_N"
             else:
-                re = 'N^' + abs(f5) * 'N' + site + f3 * 'N' + '_N'
+                re = "N^" + abs(f5) * "N" + site + f3 * "N" + "_N"
         elif cls.is_blunt():
             if f5 < 0:
-                re = 'N^_' + abs(f5) * 'N' + site
+                re = "N^_" + abs(f5) * "N" + site
             elif f5 > length:
-                re = site + (f5 - length) * 'N' + '^_N'
+                re = site + (f5 - length) * "N" + "^_N"
             else:
-                raise ValueError('%s.easyrepr() : error f5=%i'
-                                 % (cls.name, f5))
+                raise ValueError("%s.easyrepr() : error f5=%i" % (cls.name, f5))
         else:
             if f3 == 0:
                 if f5 == 0:
-                    re = 'N_' + site + '^N'
+                    re = "N_" + site + "^N"
                 else:
-                    re = site + '_' + (f5 - length) * 'N' + '^N'
+                    re = site + "_" + (f5 - length) * "N" + "^N"
             elif 0 < f3 + length <= length and 0 <= f5 <= length:
-                re = site[:f3] + '_' + site[f3:f5] + '^' + site[f5:]
+                re = site[:f3] + "_" + site[f3:f5] + "^" + site[f5:]
             elif 0 < f3 + length <= length:
-                re = site[:f3] + '_' + site[f3:] + (f5 - length) * 'N' + '^N'
+                re = site[:f3] + "_" + site[f3:] + (f5 - length) * "N" + "^N"
             elif 0 <= f5 <= length:
-                re = 'N_' + 'N' * (f3 + length) + site[:f5] + '^' + site[f5:]
+                re = "N_" + "N" * (f3 + length) + site[:f5] + "^" + site[f5:]
             elif f3 > 0:
-                re = site + f3 * 'N' + '_' + (f5 - f3 - length) * 'N' + '^N'
+                re = site + f3 * "N" + "_" + (f5 - f3 - length) * "N" + "^N"
             elif f5 < 0:
-                re = 'N_' + abs(f3 - f5 + length) * 'N' + '^' + abs(f5) * 'N' \
-                     + site
+                re = "N_" + abs(f3 - f5 + length) * "N" + "^" + abs(f5) * "N" + site
             else:
-                re = 'N_' + abs(f3 + length) * 'N' + site + (f5 - length) * \
-                     'N' + '^N'
+                re = "N_" + abs(f3 + length) * "N" + site + (f5 - length) * "N" + "^N"
         return re
 
 
@@ -1842,8 +1888,9 @@ class NotDefined(AbstractCut):
         the site.
 
         Related methods:
-         - RE.is_ambiguous()
-         - RE.is_unknown()
+
+        - RE.is_ambiguous()
+        - RE.is_unknown()
 
         """
         return False
@@ -1857,8 +1904,9 @@ class NotDefined(AbstractCut):
         the site.
 
         Related methods:
-         - RE.is_defined()
-         - RE.is_unknown()
+
+        - RE.is_defined()
+        - RE.is_unknown()
 
         """
         return False
@@ -1871,8 +1919,9 @@ class NotDefined(AbstractCut):
         i.e. the recognition site has not been characterised yet.
 
         Related methods:
-         - RE.is_defined()
-         - RE.is_ambiguous()
+
+        - RE.is_defined()
+        - RE.is_ambiguous()
 
         """
         return True
@@ -1892,8 +1941,10 @@ class NotDefined(AbstractCut):
         #   could raise an Error may be rather than return quietly.
         #
         # return False
-        raise ValueError("%s.mod2(%s), %s : NotDefined. pas glop pas glop!"
-                         % (str(cls), str(other), str(cls)))
+        raise ValueError(
+            "%s.mod2(%s), %s : NotDefined. pas glop pas glop!"
+            % (str(cls), str(other), str(cls))
+        )
 
     @classmethod
     def elucidate(cls):
@@ -1903,6 +1954,7 @@ class NotDefined(AbstractCut):
         represented as '^' and the cut on the (-) strand as '_'.
         ie:
 
+        >>> from Bio.Restriction import EcoRI, KpnI, EcoRV, SnaI
         >>> EcoRI.elucidate()   # 5' overhang
         'G^AATT_C'
         >>> KpnI.elucidate()    # 3' overhang
@@ -1914,7 +1966,7 @@ class NotDefined(AbstractCut):
         >>>
 
         """
-        return '? %s ?' % cls.site
+        return "? %s ?" % cls.site
 
 
 class Commercially_available(AbstractCut):
@@ -1932,7 +1984,7 @@ class Commercially_available(AbstractCut):
     def suppliers(cls):
         """Print a list of suppliers of the enzyme."""
         for s in cls.suppl:
-            print(suppliers_dict[s][0] + ',')
+            print(suppliers_dict[s][0] + ",")
         return
 
     @classmethod
@@ -2010,16 +2062,20 @@ class RestrictionBatch(set):
         self.suppliers = [x for x in suppliers if x in suppliers_dict]
 
     def __str__(self):
+        """Return a readable representation of the ``RestrictionBatch``."""
         if len(self) < 5:
-            return '+'.join(self.elements())
+            return "+".join(self.elements())
         else:
-            return '...'.join(('+'.join(self.elements()[:2]),
-                               '+'.join(self.elements()[-2:])))
+            return "...".join(
+                ("+".join(self.elements()[:2]), "+".join(self.elements()[-2:]))
+            )
 
     def __repr__(self):
-        return 'RestrictionBatch(%s)' % self.elements()
+        """Represent ``RestrictionBatch`` class as a string for debugging."""
+        return "RestrictionBatch(%s)" % self.elements()
 
     def __contains__(self, other):
+        """Implement ``in`` for ``RestrictionBatch``."""
         try:
             other = self.format(other)
         except ValueError:  # other is not a restriction enzyme
@@ -2063,8 +2119,7 @@ class RestrictionBatch(set):
             self.add(e)
             return e
         else:
-            raise ValueError('enzyme %s is not in RestrictionBatch'
-                             % e.__name__)
+            raise ValueError("enzyme %s is not in RestrictionBatch" % e.__name__)
 
     def lambdasplit(self, func):
         """Filter enzymes in batch with supplied function.
@@ -2072,7 +2127,7 @@ class RestrictionBatch(set):
         The new batch will contain only the enzymes for which
         func return True.
         """
-        d = [x for x in filter(func, self)]
+        d = list(filter(func, self))
         new = RestrictionBatch()
         new._data = dict(zip(d, [True] * len(d)))
         return new
@@ -2152,28 +2207,26 @@ class RestrictionBatch(set):
                 return y
             elif isinstance(eval(str(y)), RestrictionType):
                 return eval(y)
-            else:
-                pass
         except (NameError, SyntaxError):
             pass
-        raise ValueError('%s is not a RestrictionType' % y.__class__)
+        raise ValueError("%s is not a RestrictionType" % y.__class__)
 
     def is_restriction(self, y):
         """Return if enzyme (name) is a known enzyme.
 
         True if y or eval(y) is a RestrictionType.
         """
-        return (isinstance(y, RestrictionType) or
-                isinstance(eval(str(y)), RestrictionType))
+        return isinstance(y, RestrictionType) or isinstance(
+            eval(str(y)), RestrictionType
+        )
 
     def split(self, *classes, **bool):
         """Extract enzymes of a certain class and put in new RestrictionBatch.
 
-        B.split(class, [class.__name__ = True]) -> new RestrictionBatch.
-
         It works but it is slow, so it has really an interest when splitting
         over multiple conditions.
         """
+        # This comment stops black style adding a blank line here, which causes flake8 D202.
         def splittest(element):
             for klass in classes:
                 b = bool.get(klass.__name__, True)
@@ -2187,7 +2240,8 @@ class RestrictionBatch(set):
                 else:
                     continue
             return True
-        d = [k for k in filter(splittest, self)]
+
+        d = list(filter(splittest, self))
         new = RestrictionBatch()
         new._data = dict(zip(d, [True] * len(d)))
         return new
@@ -2212,14 +2266,14 @@ class RestrictionBatch(set):
 
         Letter code for the suppliers.
         """
-        supply = dict((k, v[0]) for k, v in suppliers_dict.items())
+        supply = {k: v[0] for k, v in suppliers_dict.items()}
         return supply
 
     @classmethod
     def show_codes(cls):
         """Print a list of supplier codes."""
-        supply = [' = '.join(i) for i in cls.suppl_codes().items()]
-        print('\n'.join(supply))
+        supply = [" = ".join(i) for i in cls.suppl_codes().items()]
+        print("\n".join(supply))
         return
 
     def search(self, dna, linear=True):
@@ -2242,17 +2296,19 @@ class RestrictionBatch(set):
             else:
                 self.already_mapped = str(dna), linear
                 fseq = FormattedSeq(dna, linear)
-                self.mapping = dict((x, x.search(fseq)) for x in self)
+                self.mapping = {x: x.search(fseq) for x in self}
                 return self.mapping
         elif isinstance(dna, FormattedSeq):
             if (str(dna), dna.linear) == self.already_mapped:
                 return self.mapping
             else:
                 self.already_mapped = str(dna), dna.linear
-                self.mapping = dict((x, x.search(dna)) for x in self)
+                self.mapping = {x: x.search(dna) for x in self}
                 return self.mapping
-        raise TypeError("Expected Seq or MutableSeq instance, got %s instead"
-                        % type(dna))
+        raise TypeError(
+            "Expected Seq or MutableSeq instance, got %s instead" % type(dna)
+        )
+
 
 ###############################################################################
 #                                                                             #
@@ -2260,16 +2316,17 @@ class RestrictionBatch(set):
 #                                                                             #
 ###############################################################################
 
+_empty_DNA = DNA("")
+_restrictionbatch = RestrictionBatch()
+
 
 class Analysis(RestrictionBatch, PrintFormat):
     """Provide methods for enhanced analysis and pretty printing."""
 
-    def __init__(self, restrictionbatch=RestrictionBatch(), sequence=DNA(''),
-                 linear=True):
+    def __init__(
+        self, restrictionbatch=_restrictionbatch, sequence=_empty_DNA, linear=True
+    ):
         """Initialize an Analysis with RestrictionBatch and sequence.
-
-        Analysis([restrictionbatch [, sequence] linear=True])
-        -> New Analysis class.
 
         For most of the methods of this class if a dictionary is given it will
         be used as the base to calculate the results.
@@ -2285,21 +2342,19 @@ class Analysis(RestrictionBatch, PrintFormat):
             self.search(self.sequence, self.linear)
 
     def __repr__(self):
-        return 'Analysis(%s,%s,%s)' %\
-               (repr(self.rb), repr(self.sequence), self.linear)
+        """Represent ``Analysis`` class as a string."""
+        return "Analysis(%s,%s,%s)" % (repr(self.rb), repr(self.sequence), self.linear)
 
     def _sub_set(self, wanted):
         """Filter result for keys which are in wanted (PRIVATE).
 
-        A._sub_set(other_set) -> dict.
-
-        Internal use only.
+        Internal use only. Returns a dict.
 
         Screen the results through wanted set.
         Keep only the results for which the enzymes is in wanted set.
         """
         # It seems that this method is not used in the whole class!
-        return dict((k, v) for k, v in self.mapping.items() if k in wanted)
+        return {k: v for k, v in self.mapping.items() if k in wanted}
 
     def _boundaries(self, start, end):
         """Set boundaries to correct values (PRIVATE).
@@ -2308,9 +2363,9 @@ class Analysis(RestrictionBatch, PrintFormat):
         search to only part of the sequence given to analyse.
         """
         if not isinstance(start, int):
-            raise TypeError('expected int, got %s instead' % type(start))
+            raise TypeError("expected int, got %s instead" % type(start))
         if not isinstance(end, int):
-            raise TypeError('expected int, got %s instead' % type(end))
+            raise TypeError("expected int, got %s instead" % type(end))
         if start < 1:  # Looks like this tries to do python list like indexing
             start += len(self.sequence)
         if end < 1:
@@ -2336,10 +2391,8 @@ class Analysis(RestrictionBatch, PrintFormat):
         """
         return start <= site <= len(self.sequence) or 1 <= site < end
 
-    def format_output(self, dct=None, title='', s1=''):
+    def format_output(self, dct=None, title="", s1=""):
         """Collect data and pass to PrintFormat.
-
-        A.format_output([dct[, title[, s1]]]) -> dct.
 
         If dct is not given the full dictionary is used.
         """
@@ -2347,11 +2400,8 @@ class Analysis(RestrictionBatch, PrintFormat):
             dct = self.mapping
         return PrintFormat.format_output(self, dct, title, s1)
 
-    def print_that(self, dct=None, title='', s1=''):
+    def print_that(self, dct=None, title="", s1=""):
         """Print the output of the analysis.
-
-        A.print_that([dct[, title[, s1[,print_]]]]) -> print the results
-        from dct.
 
         If dct is not given the full dictionary is used.
         s1: Title for non-cutting enzymes
@@ -2363,8 +2413,6 @@ class Analysis(RestrictionBatch, PrintFormat):
     def change(self, **what):
         """Change parameters of print output.
 
-        `A.change(**attribute_name)` -> Change attribute of Analysis.
-
         It is possible to change the width of the shell by setting
         self.ConsoleWidth to what you want.
         self.NameWidth refer to the maximal length of the enzyme name.
@@ -2375,33 +2423,32 @@ class Analysis(RestrictionBatch, PrintFormat):
         you get it right.
         """
         for k, v in what.items():
-            if k in ('NameWidth', 'ConsoleWidth'):
+            if k in ("NameWidth", "ConsoleWidth"):
                 setattr(self, k, v)
                 self.Cmodulo = self.ConsoleWidth % self.NameWidth
                 self.PrefWidth = self.ConsoleWidth - self.Cmodulo
-            elif k == 'sequence':
-                setattr(self, 'sequence', v)
+            elif k == "sequence":
+                setattr(self, "sequence", v)
                 self.search(self.sequence, self.linear)
-            elif k == 'rb':
+            elif k == "rb":
                 self = Analysis.__init__(self, v, self.sequence, self.linear)
-            elif k == 'linear':
-                setattr(self, 'linear', v)
+            elif k == "linear":
+                setattr(self, "linear", v)
                 self.search(self.sequence, v)
-            elif k in ('Indent', 'Maxsize'):
+            elif k in ("Indent", "Maxsize"):
                 setattr(self, k, v)
-            elif k in ('Cmodulo', 'PrefWidth'):
+            elif k in ("Cmodulo", "PrefWidth"):
                 raise AttributeError(
-                    'To change %s, change NameWidth and/or ConsoleWidth' % k)
+                    "To change %s, change NameWidth and/or ConsoleWidth" % k
+                )
             else:
-                raise AttributeError('Analysis has no attribute %s' % k)
+                raise AttributeError("Analysis has no attribute %s" % k)
         return
 
     def full(self, linear=True):
         """Perform analysis with all enzymes of batch and return all results.
 
-        A.full() -> dict.
-
-        Full Restriction Map of the sequence.
+        Full Restriction Map of the sequence, as a dictionary.
         """
         return self.mapping
 
@@ -2409,67 +2456,66 @@ class Analysis(RestrictionBatch, PrintFormat):
         """Return only cuts that have blunt ends."""
         if not dct:
             dct = self.mapping
-        return dict((k, v) for k, v in dct.items() if k.is_blunt())
+        return {k: v for k, v in dct.items() if k.is_blunt()}
 
     def overhang5(self, dct=None):
         """Return only cuts that have 5' overhangs."""
         if not dct:
             dct = self.mapping
-        return dict((k, v) for k, v in dct.items() if k.is_5overhang())
+        return {k: v for k, v in dct.items() if k.is_5overhang()}
 
     def overhang3(self, dct=None):
         """Return only cuts that have 3' overhangs."""
         if not dct:
             dct = self.mapping
-        return dict((k, v) for k, v in dct.items() if k.is_3overhang())
+        return {k: v for k, v in dct.items() if k.is_3overhang()}
 
     def defined(self, dct=None):
         """Return only results from enzymes that produce defined overhangs."""
         if not dct:
             dct = self.mapping
-        return dict((k, v) for k, v in dct.items() if k.is_defined())
+        return {k: v for k, v in dct.items() if k.is_defined()}
 
     def with_sites(self, dct=None):
         """Return only results from enzyme with at least one cut."""
         if not dct:
             dct = self.mapping
-        return dict((k, v) for k, v in dct.items() if v)
+        return {k: v for k, v in dct.items() if v}
 
     def without_site(self, dct=None):
         """Return only results from enzymes that don't cut the sequence."""
         if not dct:
             dct = self.mapping
-        return dict((k, v) for k, v in dct.items() if not v)
+        return {k: v for k, v in dct.items() if not v}
 
     def with_N_sites(self, N, dct=None):
         """Return only results from enzymes that cut the sequence N times."""
         if not dct:
             dct = self.mapping
-        return dict((k, v) for k, v in dct.items()if len(v) == N)
+        return {k: v for k, v in dct.items() if len(v) == N}
 
     def with_number_list(self, list, dct=None):
         """Return only results from enzymes that cut (x,y,z,...) times."""
         if not dct:
             dct = self.mapping
-        return dict((k, v) for k, v in dct.items() if len(v) in list)
+        return {k: v for k, v in dct.items() if len(v) in list}
 
     def with_name(self, names, dct=None):
         """Return only results from enzymes which names are listed."""
         for i, enzyme in enumerate(names):
             if enzyme not in AllEnzymes:
-                warnings.warn("no data for the enzyme: %s" % enzyme,
-                              BiopythonWarning)
+                warnings.warn("no data for the enzyme: %s" % enzyme, BiopythonWarning)
                 del names[i]
         if not dct:
             return RestrictionBatch(names).search(self.sequence, self.linear)
-        return dict((n, dct[n]) for n in names if n in dct)
+        return {n: dct[n] for n in names if n in dct}
 
     def with_site_size(self, site_size, dct=None):
         """Return only results form enzymes with a given site size."""
         sites = [name for name in self if name.size == site_size]
         if not dct:
             return RestrictionBatch(sites).search(self.sequence)
-        return dict((k, v) for k, v in dct.items() if k in site_size)
+        return {k: v for k, v in dct.items() if k in site_size}
 
     def only_between(self, start, end, dct=None):
         """Return only results from enzymes that only cut within start, end."""
@@ -2515,11 +2561,15 @@ class Analysis(RestrictionBatch, PrintFormat):
         """
         d = []
         if start <= end:
-            d = [(k, [vv for vv in v if start <= vv <= end])
-                 for k, v in self.between(start, end, dct).items()]
+            d = [
+                (k, [vv for vv in v if start <= vv <= end])
+                for k, v in self.between(start, end, dct).items()
+            ]
         else:
-            d = [(k, [vv for vv in v if start <= vv or vv <= end])
-                 for k, v in self.between(start, end, dct).items()]
+            d = [
+                (k, [vv for vv in v if start <= vv or vv <= end])
+                for k, v in self.between(start, end, dct).items()
+            ]
         return dict(d)
 
     def only_outside(self, start, end, dct=None):
@@ -2594,8 +2644,8 @@ class Analysis(RestrictionBatch, PrintFormat):
 #   It is essential to run Restriction with doc string optimisation (-OO
 #   switch) as the doc string of 660 classes take a lot of processing.
 #
-CommOnly = RestrictionBatch()    # commercial enzymes
-NonComm = RestrictionBatch()     # not available commercially
+CommOnly = RestrictionBatch()  # commercial enzymes
+NonComm = RestrictionBatch()  # not available commercially
 for TYPE, (bases, enzymes) in typedict.items():
     #
     #   The keys are the pseudo-types TYPE (stored as type1, type2...)
@@ -2619,7 +2669,7 @@ for TYPE, (bases, enzymes) in typedict.items():
     #   now create the particular value of RestrictionType for the classes
     #   in enzymes.
     #
-    T = type.__new__(RestrictionType, 'RestrictionType', bases, {})
+    T = type.__new__(RestrictionType, "RestrictionType", bases, {})
     for k in enzymes:
         #
         #   Now, we go through all the enzymes and assign them their type.
@@ -2645,12 +2695,13 @@ AllEnzymes.update(NonComm)
 #   Now, place the enzymes in locals so they can be imported.
 #
 names = [str(x) for x in AllEnzymes]
-try:
-    del x  # noqa
-except NameError:
-    # Scoping changed in Python 3, the variable isn't leaked
-    pass
 locals().update(dict(zip(names, AllEnzymes)))
-__all__ = ('FormattedSeq', 'Analysis', 'RestrictionBatch', 'AllEnzymes',
-           'CommOnly', 'NonComm') + tuple(names)
+__all__ = (
+    "FormattedSeq",
+    "Analysis",
+    "RestrictionBatch",
+    "AllEnzymes",
+    "CommOnly",
+    "NonComm",
+) + tuple(names)
 del k, enzymes, TYPE, bases, names

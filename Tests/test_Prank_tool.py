@@ -14,7 +14,7 @@ from Bio.Align.Applications import PrankCommandline
 from Bio.Nexus.Nexus import NexusError
 
 # Try to avoid problems when the OS is in another language
-os.environ['LANG'] = 'C'
+os.environ["LANG"] = "C"
 
 prank_exe = None
 if sys.platform == "win32":
@@ -37,10 +37,11 @@ if sys.platform == "win32":
         if prank_exe:
             break
 else:
-    from Bio._py3k import getoutput
+    from subprocess import getoutput
     output = getoutput("prank")
-    if "not found" not in output and "prank" in output.lower():
-        prank_exe = "prank"
+    if "not found" not in output and "not recognized" not in output:
+        if "prank" in output.lower():
+            prank_exe = "prank"
 if not prank_exe:
     raise MissingExternalDependencyError(
         "Install PRANK if you want to use the Bio.Align.Applications wrapper.")
@@ -151,7 +152,7 @@ class PrankConversion(unittest.TestCase):
     def setUp(self):
         # As these reads are all 36, it can be seen as pre-aligned:
         self.input = "Quality/example.fasta"
-        self.output = 'temp with space'  # prefix, PRANK will pick extensions
+        self.output = "temp with space"  # prefix, PRANK will pick extensions
 
     def conversion(self, prank_number, prank_ext, format):
         """Get PRANK to do a conversion, and check it with SeqIO."""
@@ -162,10 +163,10 @@ class PrankConversion(unittest.TestCase):
                                    convert=True, f=prank_number,
                                    o='"%s"' % self.output)
         self.assertEqual(str(cmdline), _escape_filename(prank_exe) +
-                         ' -d=%s' % self.input +
+                         " -d=%s" % self.input +
                          ' -o="%s"' % self.output +
-                         ' -f=%i' % prank_number +
-                         ' -convert')
+                         " -f=%i" % prank_number +
+                         " -convert")
         self.assertEqual(str(eval(repr(cmdline))), str(cmdline))
         message, error = cmdline()
         self.assertIn("PRANK", message)

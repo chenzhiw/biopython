@@ -1,7 +1,9 @@
 # Copyright (C) 2002, Thomas Hamelryck (thamelry@binf.ku.dk)
-# This code is part of the Biopython distribution and governed by its
-# license.  Please see the LICENSE file that should have been included
-# as part of this package.
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
 
 """Chain class, used in Structure objects."""
 
@@ -9,6 +11,12 @@ from Bio.PDB.Entity import Entity
 
 
 class Chain(Entity):
+    """Define Chain class.
+
+    Chain is an object of type Entity, stores residues and includes a method to
+    access atoms from residues.
+    """
+
     def __init__(self, id):
         """Initialize the class."""
         self.level = "C"
@@ -16,10 +24,11 @@ class Chain(Entity):
 
     # Sorting methods: empty chain IDs come last.
     def __gt__(self, other):
+        """Validate if id is greater than other.id."""
         if isinstance(other, Chain):
-            if self.id == ' ' and other.id != ' ':
+            if self.id == " " and other.id != " ":
                 return 0
-            elif self.id != ' ' and other.id == ' ':
+            elif self.id != " " and other.id == " ":
                 return 1
             else:
                 return self.id > other.id
@@ -27,10 +36,11 @@ class Chain(Entity):
             return NotImplemented
 
     def __ge__(self, other):
+        """Validate if id is greater or equal than other.id."""
         if isinstance(other, Chain):
-            if self.id == ' ' and other.id != ' ':
+            if self.id == " " and other.id != " ":
                 return 0
-            elif self.id != ' ' and other.id == ' ':
+            elif self.id != " " and other.id == " ":
                 return 1
             else:
                 return self.id >= other.id
@@ -38,10 +48,11 @@ class Chain(Entity):
             return NotImplemented
 
     def __lt__(self, other):
+        """Validate if id is less than other.id."""
         if isinstance(other, Chain):
-            if self.id == ' ' and other.id != ' ':
+            if self.id == " " and other.id != " ":
                 return 0
-            elif self.id != ' ' and other.id == ' ':
+            elif self.id != " " and other.id == " ":
                 return 1
             else:
                 return self.id < other.id
@@ -49,10 +60,11 @@ class Chain(Entity):
             return NotImplemented
 
     def __le__(self, other):
+        """Validate if id is less or equal than other id."""
         if isinstance(other, Chain):
-            if self.id == ' ' and other.id != ' ':
+            if self.id == " " and other.id != " ":
                 return 0
-            elif self.id != ' ' and other.id == ' ':
+            elif self.id != " " and other.id == " ":
                 return 1
             else:
                 return self.id <= other.id
@@ -60,7 +72,7 @@ class Chain(Entity):
             return NotImplemented
 
     def _translate_id(self, id):
-        """Translate sequence identifer to tuple form (PRIVATE).
+        """Translate sequence identifier to tuple form (PRIVATE).
 
         A residue id is normally a tuple (hetero flag, sequence identifier,
         insertion code). Since for most residues the hetero flag and the
@@ -70,12 +82,11 @@ class Chain(Entity):
         " ") tuple.
 
         Arguments:
-
-        - id - int, residue resseq
+         - id - int, residue resseq
 
         """
         if isinstance(id, int):
-            id = (' ', id, ' ')
+            id = (" ", id, " ")
         return id
 
     def __getitem__(self, id):
@@ -86,8 +97,7 @@ class Chain(Entity):
         method.
 
         Arguments:
-
-        - id - (string, int, string) or int
+         - id - (string, int, string) or int
 
         """
         id = self._translate_id(id)
@@ -97,8 +107,7 @@ class Chain(Entity):
         """Check if a residue with given id is present in this chain.
 
         Arguments:
-
-        - id - (string, int, string) or int
+         - id - (string, int, string) or int
 
         """
         id = self._translate_id(id)
@@ -108,14 +117,14 @@ class Chain(Entity):
         """Delete item.
 
         Arguments:
-
-        - id - (string, int, string) or int
+         - id - (string, int, string) or int
 
         """
         id = self._translate_id(id)
         return Entity.__delitem__(self, id)
 
     def __repr__(self):
+        """Return the chain identifier."""
         return "<Chain id=%s>" % self.get_id()
 
     # Public methods
@@ -145,8 +154,7 @@ class Chain(Entity):
         method.
 
         Arguments:
-
-        - id - (string, int, string) or int
+         - id - (string, int, string) or int
 
         """
         id = self._translate_id(id)
@@ -155,10 +163,10 @@ class Chain(Entity):
     # Public
 
     def get_residues(self):
-        for r in self:
-            yield r
+        """Return residues."""
+        yield from self
 
     def get_atoms(self):
+        """Return atoms from residues."""
         for r in self.get_residues():
-            for a in r:
-                yield a
+            yield from r

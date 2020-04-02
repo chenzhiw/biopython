@@ -6,7 +6,7 @@
 """Approximate calculation of appropriate thresholds for motif finding."""
 
 
-class ScoreDistribution(object):
+class ScoreDistribution:
     """Class representing approximate score distribution for a given motif.
 
     Utilizes a dynamic programming approach to calculate the distribution of
@@ -56,6 +56,7 @@ class ScoreDistribution(object):
         return max(0, min(self.n_points - 1, i + j))
 
     def modify(self, scores, mo_probs, bg_probs):
+        """Modify motifs and background density."""
         mo_new = [0.0] * self.n_points
         bg_new = [0.0] * self.n_points
         for k, v in scores.items():

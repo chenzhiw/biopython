@@ -1,7 +1,9 @@
 # Copyright (C) 2002, Thomas Hamelryck (thamelry@binf.ku.dk)
-# This code is part of the Biopython distribution and governed by its
-# license.  Please see the LICENSE file that should have been included
-# as part of this package.
+#
+# This file is part of the Biopython distribution and governed by your
+# choice of the "Biopython License Agreement" or the "BSD 3-Clause License".
+# Please see the LICENSE file that should have been included as part of this
+# package.
 
 """Atom class, used in Structure objects."""
 
@@ -15,15 +17,32 @@ from Bio.PDB.vectors import Vector
 from Bio.Data import IUPACData
 
 
-class Atom(object):
-    def __init__(self, name, coord, bfactor, occupancy, altloc, fullname, serial_number,
-                 element=None):
-        """Create Atom object.
+class Atom:
+    """Define Atom class.
 
-        The Atom object stores atom name (both with and without spaces),
-        coordinates, B factor, occupancy, alternative location specifier
-        and (optionally) anisotropic B factor and standard deviations of
-        B factor and positions.
+    The Atom object stores atom name (both with and without spaces),
+    coordinates, B factor, occupancy, alternative location specifier
+    and (optionally) anisotropic B factor and standard deviations of
+    B factor and positions.
+
+    In the case of PQR files, B factor and occupancy are replaced by
+    atomic charge and radius.
+    """
+
+    def __init__(
+        self,
+        name,
+        coord,
+        bfactor,
+        occupancy,
+        altloc,
+        fullname,
+        serial_number,
+        element=None,
+        pqr_charge=None,
+        radius=None,
+    ):
+        """Initialize Atom object.
 
         :param name: atom name (eg. "CA"). Note that spaces are normally stripped.
         :type name: string
@@ -46,6 +65,12 @@ class Atom(object):
 
         :param element: atom element, e.g. "C" for Carbon, "HG" for mercury,
         :type element: uppercase string (or None if unknown)
+
+        :param pqr_charge: atom charge
+        :type pqr_charge: number
+
+        :param radius: atom radius
+        :type radius: number
         """
         self.level = "A"
         # Reference to the residue
@@ -69,9 +94,11 @@ class Atom(object):
         assert not element or element == element.upper(), element
         self.element = self._assign_element(element)
         self.mass = self._assign_atom_mass()
+        self.pqr_charge = pqr_charge
+        self.radius = radius
 
         # For atom sorting (protein backbone atoms first)
-        self._sorting_keys = {'N': 0, 'CA': 1, 'C': 2, 'O': 3}
+        self._sorting_keys = {"N": 0, "CA": 1, "C": 2, "O": 3}
 
     # Sorting Methods
     # standard across different objects and allows direct comparison
@@ -90,7 +117,7 @@ class Atom(object):
             return NotImplemented
 
     def __gt__(self, other):
-        """Test greater then."""
+        """Test greater than."""
         if isinstance(other, Atom):
             if self.parent != other.parent:
                 return self.parent > other.parent
@@ -155,6 +182,7 @@ class Atom(object):
 
     # Hash method to allow uniqueness (set)
     def __hash__(self):
+        """Return atom full identifier."""
         return hash(self.get_full_id())
 
     def _assign_element(self, element):
@@ -175,23 +203,29 @@ class Atom(object):
                     putative_element = self.name[0]
 
             if putative_element.capitalize() in IUPACData.atom_weights:
-                msg = "Used element %r for Atom (name=%s) with given element %r" \
-                      % (putative_element, self.name, element)
+                msg = "Used element %r for Atom (name=%s) with given element %r" % (
+                    putative_element,
+                    self.name,
+                    element,
+                )
                 element = putative_element
             else:
-                msg = "Could not assign element %r for Atom (name=%s) with given element %r" \
-                      % (putative_element, self.name, element)
+                msg = (
+                    "Could not assign element %r for Atom (name=%s) with given element %r"
+                    % (putative_element, self.name, element)
+                )
                 element = ""
             warnings.warn(msg, PDBConstructionWarning)
 
         return element
 
     def _assign_atom_mass(self):
+        """Return atom weight (PRIVATE)."""
         # Needed for Bio/Struct/Geometry.py C.O.M. function
         if self.element:
             return IUPACData.atom_weights[self.element.capitalize()]
         else:
-            return float('NaN')
+            return float("NaN")
 
     # Special methods
 
@@ -207,7 +241,9 @@ class Atom(object):
 
         Examples
         --------
-        >>> distance = atom1 - atom2
+        This is an incomplete but illustrative example::
+
+            distance = atom1 - atom2
 
         """
         diff = self.coord - other.coord
@@ -216,18 +252,23 @@ class Atom(object):
     # set methods
 
     def set_serial_number(self, n):
+        """Set serial number."""
         self.serial_number = n
 
     def set_bfactor(self, bfactor):
+        """Set isotroptic B factor."""
         self.bfactor = bfactor
 
     def set_coord(self, coord):
+        """Set coordinates."""
         self.coord = coord
 
     def set_altloc(self, altloc):
+        """Set alternative location specifier."""
         self.altloc = altloc
 
     def set_occupancy(self, occupancy):
+        """Set occupancy."""
         self.occupancy = occupancy
 
     def set_sigatm(self, sigatm_array):
@@ -257,6 +298,14 @@ class Atom(object):
         :type anisou_array: Numeric array (length 6)
         """
         self.anisou_array = anisou_array
+
+    def set_charge(self, pqr_charge):
+        """Set charge."""
+        self.pqr_charge = pqr_charge
+
+    def set_radius(self, radius):
+        """Set radius."""
+        self.radius = radius
 
     # Public methods
 
@@ -302,6 +351,7 @@ class Atom(object):
         return self.parent
 
     def get_serial_number(self):
+        """Return the serial number."""
         return self.serial_number
 
     def get_name(self):
@@ -341,7 +391,16 @@ class Atom(object):
         return self.altloc
 
     def get_level(self):
+        """Return level."""
         return self.level
+
+    def get_charge(self):
+        """Return charge."""
+        return self.pqr_charge
+
+    def get_radius(self):
+        """Return radius."""
+        return self.radius
 
     def transform(self, rot, tran):
         """Apply rotation and translation to the atomic coordinates.
@@ -354,9 +413,13 @@ class Atom(object):
 
         Examples
         --------
-        >>> rotation=rotmat(pi, Vector(1, 0, 0))
-        >>> translation=array((0, 0, 1), 'f')
-        >>> atom.transform(rotation, translation)
+        This is an incomplete but illustrative example::
+
+            from numpy import pi, array
+            from Bio.PDB.vectors import Vector, rotmat
+            rotation = rotmat(pi, Vector(1, 0, 0))
+            translation = array((0, 0, 1), 'f')
+            atom.transform(rotation, translation)
 
         """
         self.coord = numpy.dot(self.coord, rot) + tran
@@ -408,10 +471,11 @@ class DisorderedAtom(DisorderedEntityWrapper):
     # Special methods
     # Override parent class __iter__ method
     def __iter__(self):
-        for i in self.disordered_get_list():
-            yield i
+        """Iterate through disordered atoms."""
+        yield from self.disordered_get_list()
 
     def __repr__(self):
+        """Return disordered atom identifier."""
         return "<Disordered Atom %s>" % self.get_id()
 
     def disordered_add(self, atom):

@@ -5,11 +5,15 @@
 # license.  Please see the LICENSE file that should have been included
 # as part of this package.
 
-from Bio import MissingExternalDependencyError
+"""Tests for ClustalOmega tool."""
 
 import sys
 import os
 import unittest
+
+from subprocess import getoutput
+
+from Bio import MissingExternalDependencyError
 from Bio import SeqIO
 from Bio import AlignIO
 from Bio.Align.Applications import ClustalOmegaCommandline
@@ -18,16 +22,14 @@ from Bio.Application import ApplicationError
 #################################################################
 
 # Try to avoid problems when the OS is in another language
-os.environ['LANG'] = 'C'
+os.environ["LANG"] = "C"
 
 clustalo_exe = None
-from Bio._py3k import getoutput
 try:
     output = getoutput("clustalo --help")
     if output.startswith("Clustal Omega"):
         clustalo_exe = "clustalo"
-except OSError:
-    # TODO: Use FileNotFoundError once we drop Python 2
+except FileNotFoundError:
     pass
 
 if not clustalo_exe:
@@ -46,8 +48,7 @@ class ClustalOmegaTestCase(unittest.TestCase):
                 os.remove(filename)
 
     def standard_test_procedure(self, cline):
-        """Standard testing procedure used by all tests."""
-
+        """Shared test procedure used by all tests."""
         # Overwrite existing files.
         cline.force = True
 
@@ -78,7 +79,7 @@ class ClustalOmegaTestCase(unittest.TestCase):
             self.assertTrue(os.path.isfile(cline.guidetree_out))
 
     def add_file_to_clean(self, filename):
-        """Adds a file for deferred removal by the tearDown routine."""
+        """Add a file for deferred removal by the tearDown routine."""
         self.files_to_clean.add(filename)
 
 #################################################################
@@ -159,9 +160,8 @@ class ClustalOmegaTestNormalConditions(ClustalOmegaTestCase):
     def test_input_filename_with_space(self):
         """Test an input filename containing a space."""
         input_file = "Clustalw/temp horses.fasta"
-        handle = open(input_file, "w")
-        SeqIO.write(SeqIO.parse("Phylip/hennigian.phy", "phylip"), handle, "fasta")
-        handle.close()
+        with open(input_file, "w") as handle:
+            SeqIO.write(SeqIO.parse("Phylip/hennigian.phy", "phylip"), handle, "fasta")
         output_file = "temp_test.aln"
 
         cline = ClustalOmegaCommandline(clustalo_exe,
@@ -192,10 +192,9 @@ class ClustalOmegaTestNormalConditions(ClustalOmegaTestCase):
         # records should show the deadlock but is very slow - just thirty
         # seems to lockup on Mac OS X, even 20 on Linux (without the fix).
         input_file = "temp_cw_prot.fasta"
-        handle = open(input_file, "w")
         records = list(SeqIO.parse("NBRF/Cw_prot.pir", "pir"))[:40]
-        SeqIO.write(records, handle, "fasta")
-        handle.close()
+        with open(input_file, "w") as handle:
+            SeqIO.write(records, handle, "fasta")
         del handle, records
         output_file = "temp_cw_prot.aln"
 

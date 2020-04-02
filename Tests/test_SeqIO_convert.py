@@ -4,7 +4,6 @@
 # as part of this package.
 
 """Unit tests for Bio.SeqIO.convert(...) function."""
-from __future__ import print_function
 
 import unittest
 import warnings
@@ -13,7 +12,7 @@ from Bio.Seq import UnknownSeq
 from Bio import SeqIO
 from Bio.SeqIO import QualityIO
 from Bio.SeqIO._convert import _converter as converter_dict
-from Bio._py3k import StringIO
+from io import StringIO
 from Bio.Alphabet import generic_nucleotide, generic_dna
 
 
@@ -35,7 +34,7 @@ def check_convert(in_filename, in_format, out_format, alphabet=None):
     qual_truncate = truncation_expected(out_format)
     with warnings.catch_warnings():
         if qual_truncate:
-            warnings.simplefilter('ignore', BiopythonWarning)
+            warnings.simplefilter("ignore", BiopythonWarning)
         SeqIO.write(records, handle, out_format)
     handle.seek(0)
     # Now load it back and check it agrees,
@@ -45,7 +44,7 @@ def check_convert(in_filename, in_format, out_format, alphabet=None):
     handle2 = StringIO()
     with warnings.catch_warnings():
         if qual_truncate:
-            warnings.simplefilter('ignore', BiopythonWarning)
+            warnings.simplefilter("ignore", BiopythonWarning)
         SeqIO.convert(in_filename, in_format, handle2, out_format, alphabet)
     # We could re-parse this, but it is simpler and stricter:
     assert handle.getvalue() == handle2.getvalue()
@@ -60,10 +59,10 @@ def check_convert_fails(in_filename, in_format, out_format, alphabet=None):
         handle = StringIO()
         with warnings.catch_warnings():
             if qual_truncate:
-                warnings.simplefilter('ignore', BiopythonWarning)
+                warnings.simplefilter("ignore", BiopythonWarning)
             SeqIO.write(records, handle, out_format)
         handle.seek(0)
-        assert False, "Parse or write should have failed!"
+        raise ValueError("Parse or write should have failed!")
     except ValueError as err:
         err1 = err
     # Now do the conversion...
@@ -71,13 +70,13 @@ def check_convert_fails(in_filename, in_format, out_format, alphabet=None):
         handle2 = StringIO()
         with warnings.catch_warnings():
             if qual_truncate:
-                warnings.simplefilter('ignore', BiopythonWarning)
+                warnings.simplefilter("ignore", BiopythonWarning)
             SeqIO.convert(in_filename, in_format, handle2, out_format, alphabet)
-        assert False, "Convert should have failed!"
+        raise ValueError("Convert should have failed!")
     except ValueError as err2:
-        assert str(err1) == str(err2), \
-               "Different failures, parse/write:\n%s\nconvert:\n%s" \
-               % (err1, err2)
+        assert str(err1) == str(
+            err2
+        ), "Different failures, parse/write:\n%s\nconvert:\n%s" % (err1, err2)
 
 
 # TODO - move this to a shared test module...
@@ -89,10 +88,12 @@ def compare_record(old, new, truncate=None):
     """
     if old.id != new.id:
         raise ValueError("'%s' vs '%s' " % (old.id, new.id))
-    if old.description != new.description \
-    and (old.id + " " + old.description).strip() != new.description \
-    and new.description != "<unknown description>" \
-    and new.description != "":  # e.g. tab format
+    if (
+        old.description != new.description
+        and (old.id + " " + old.description).strip() != new.description
+        and new.description != "<unknown description>"
+        and new.description != ""
+    ):
         raise ValueError("'%s' vs '%s' " % (old.description, new.description))
     if len(old.seq) != len(new.seq):
         raise ValueError("%i vs %i" % (len(old.seq), len(new.seq)))
@@ -103,28 +104,40 @@ def compare_record(old, new, truncate=None):
             raise ValueError("'%s' vs '%s'" % (old.seq, new.seq))
         else:
             raise ValueError("'%s...' vs '%s...'" % (old.seq[:100], new.seq[:100]))
-    if "phred_quality" in old.letter_annotations \
-    and "phred_quality" in new.letter_annotations \
-    and old.letter_annotations["phred_quality"] != new.letter_annotations["phred_quality"]:
-        if truncate and [min(q, truncate) for q in old.letter_annotations["phred_quality"]] == \
-                        [min(q, truncate) for q in new.letter_annotations["phred_quality"]]:
+    if (
+        "phred_quality" in old.letter_annotations
+        and "phred_quality" in new.letter_annotations
+        and old.letter_annotations["phred_quality"]
+        != new.letter_annotations["phred_quality"]
+    ):
+        if truncate and [
+            min(q, truncate) for q in old.letter_annotations["phred_quality"]
+        ] == [min(q, truncate) for q in new.letter_annotations["phred_quality"]]:
             pass
         else:
             raise ValueError("Mismatch in phred_quality")
-    if "solexa_quality" in old.letter_annotations \
-    and "solexa_quality" in new.letter_annotations \
-    and old.letter_annotations["solexa_quality"] != new.letter_annotations["solexa_quality"]:
-        if truncate and [min(q, truncate) for q in old.letter_annotations["solexa_quality"]] == \
-                        [min(q, truncate) for q in new.letter_annotations["solexa_quality"]]:
+    if (
+        "solexa_quality" in old.letter_annotations
+        and "solexa_quality" in new.letter_annotations
+        and old.letter_annotations["solexa_quality"]
+        != new.letter_annotations["solexa_quality"]
+    ):
+        if truncate and [
+            min(q, truncate) for q in old.letter_annotations["solexa_quality"]
+        ] == [min(q, truncate) for q in new.letter_annotations["solexa_quality"]]:
             pass
         else:
             raise ValueError("Mismatch in phred_quality")
-    if "phred_quality" in old.letter_annotations \
-    and "solexa_quality" in new.letter_annotations:
+    if (
+        "phred_quality" in old.letter_annotations
+        and "solexa_quality" in new.letter_annotations
+    ):
         # Mapping from Solexa to PHRED is lossy, but so is PHRED to Solexa.
         # Assume "old" is the original, and "new" has been converted.
-        converted = [round(QualityIO.solexa_quality_from_phred(q))
-                     for q in old.letter_annotations["phred_quality"]]
+        converted = [
+            round(QualityIO.solexa_quality_from_phred(q))
+            for q in old.letter_annotations["phred_quality"]
+        ]
         if truncate:
             converted = [min(q, truncate) for q in converted]
         if converted != new.letter_annotations["solexa_quality"]:
@@ -133,12 +146,16 @@ def compare_record(old, new, truncate=None):
             print(converted)
             print(new.letter_annotations["solexa_quality"])
             raise ValueError("Mismatch in phred_quality vs solexa_quality")
-    if "solexa_quality" in old.letter_annotations \
-    and "phred_quality" in new.letter_annotations:
+    if (
+        "solexa_quality" in old.letter_annotations
+        and "phred_quality" in new.letter_annotations
+    ):
         # Mapping from Solexa to PHRED is lossy, but so is PHRED to Solexa.
         # Assume "old" is the original, and "new" has been converted.
-        converted = [round(QualityIO.phred_quality_from_solexa(q))
-                     for q in old.letter_annotations["solexa_quality"]]
+        converted = [
+            round(QualityIO.phred_quality_from_solexa(q))
+            for q in old.letter_annotations["solexa_quality"]
+        ]
         if truncate:
             converted = [min(q, truncate) for q in converted]
         if converted != new.letter_annotations["phred_quality"]:
@@ -181,20 +198,23 @@ tests = [
     ("EMBL/TRBG361.embl", "embl", None),
     ("GenBank/NC_005816.gb", "gb", None),
     ("GenBank/cor6_6.gb", "genbank", None),
-    ]
+]
 for filename, format, alphabet in tests:
     for (in_format, out_format) in converter_dict:
         if in_format != format:
             continue
 
         def funct(fn, fmt1, fmt2, alpha):
-            f = lambda x: x.simple_check(fn, fmt1, fmt2, alpha)
+            f = lambda x: x.simple_check(fn, fmt1, fmt2, alpha)  # noqa: E731
             f.__doc__ = "Convert %s from %s to %s" % (fn, fmt1, fmt2)
             return f
 
-        setattr(ConvertTests, "test_%s_%s_to_%s"
-                % (filename.replace("/", "_").replace(".", "_"), in_format, out_format),
-                funct(filename, in_format, out_format, alphabet))
+        setattr(
+            ConvertTests,
+            "test_%s_%s_to_%s"
+            % (filename.replace("/", "_").replace(".", "_"), in_format, out_format),
+            funct(filename, in_format, out_format, alphabet),
+        )
         del funct
 
 # Fail tests:
@@ -221,25 +241,31 @@ tests = [
     ("Quality/error_trunc_in_qual.fastq", "fastq", generic_dna),
     ("Quality/error_double_seq.fastq", "fastq", generic_dna),
     ("Quality/error_double_qual.fastq", "fastq", generic_dna),
-    ]
+]
 for filename, format, alphabet in tests:
     for (in_format, out_format) in converter_dict:
         if in_format != format:
             continue
-        if in_format in ["fastq", "fastq-sanger", "fastq-solexa", "fastq-illumina"] \
-        and out_format in ["fasta", "tab"] and filename.startswith("Quality/error_qual_"):
+        if (
+            in_format in ["fastq", "fastq-sanger", "fastq-solexa", "fastq-illumina"]
+            and out_format in ["fasta", "tab"]
+            and filename.startswith("Quality/error_qual_")
+        ):
             # TODO? These conversions don't check for bad characters in the quality,
             # and in order to pass this strict test they should.
             continue
 
         def funct(fn, fmt1, fmt2, alpha):
-            f = lambda x: x.failure_check(fn, fmt1, fmt2, alpha)
+            f = lambda x: x.failure_check(fn, fmt1, fmt2, alpha)  # noqa: E731
             f.__doc__ = "Convert %s from %s to %s" % (fn, fmt1, fmt2)
             return f
 
-        setattr(ConvertTests, "test_%s_%s_to_%s"
-                % (filename.replace("/", "_").replace(".", "_"), in_format, out_format),
-                funct(filename, in_format, out_format, alphabet))
+        setattr(
+            ConvertTests,
+            "test_%s_%s_to_%s"
+            % (filename.replace("/", "_").replace(".", "_"), in_format, out_format),
+            funct(filename, in_format, out_format, alphabet),
+        )
     del funct
 
 

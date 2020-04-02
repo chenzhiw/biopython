@@ -2,23 +2,15 @@
 # license.  Please see the LICENSE file that should have been included
 # as part of this package.
 """Dealing with storage of biopython objects in a BioSQL relational db."""
-from __future__ import print_function
 
+import configparser
 import os
 import platform
-import sys
 import tempfile
 import time
 import unittest
 
-try:
-    import configparser  # Python 3
-except ImportError:
-    import ConfigParser as configparser  # Python 2
-
-from Bio._py3k import StringIO
-from Bio._py3k import zip
-from Bio._py3k import basestring
+from io import StringIO
 
 # Hide annoying warnings from things like bonds in GenBank features,
 # or PostgreSQL schema rules. TODO - test these warnings are raised!
@@ -70,7 +62,7 @@ def temp_db_filename():
     # TESTDB = ':memory:'
     # Instead, we use (if we can) /dev/shm
     try:
-        h, test_db_fname = tempfile.mkstemp("_BioSQL.db", dir='/dev/shm')
+        h, test_db_fname = tempfile.mkstemp("_BioSQL.db", dir="/dev/shm")
     except OSError:
         # We can't use /dev/shm
         h, test_db_fname = tempfile.mkstemp("_BioSQL.db")
@@ -102,13 +94,16 @@ def check_config(dbdriver, dbtype, dbhost, dbuser, dbpasswd, testdb):
                 import org.postgresql.Driver
         except ImportError:
             message = "Install the JDBC driver for %s to use BioSQL " % DBTYPE
-            raise MissingExternalDependencyError(message)
+            raise MissingExternalDependencyError(message) from None
     else:
         try:
             __import__(DBDRIVER)
         except ImportError:
-            message = "Install %s if you want to use %s with BioSQL " % (DBDRIVER, DBTYPE)
-            raise MissingExternalDependencyError(message)
+            if DBDRIVER in ["MySQLdb"]:
+                message = "Install MySQLdb or mysqlclient if you want to use %s with BioSQL " % (DBTYPE)
+            else:
+                message = "Install %s if you want to use %s with BioSQL " % (DBDRIVER, DBTYPE)
+            raise MissingExternalDependencyError(message) from None
 
     try:
         if DBDRIVER in ["sqlite3"]:
@@ -120,7 +115,7 @@ def check_config(dbdriver, dbtype, dbhost, dbuser, dbpasswd, testdb):
         del server
     except Exception as e:
         message = "Connection failed, check settings if you plan to use BioSQL: %s" % e
-        raise MissingExternalDependencyError(message)
+        raise MissingExternalDependencyError(message) from None
 
     DBSCHEMA = "biosqldb-" + DBTYPE + ".sql"
     SQL_FILE = os.path.join(os.getcwd(), "BioSQL", DBSCHEMA)
@@ -135,7 +130,6 @@ def _do_db_cleanup():
 
     Relevant for MySQL and PostgreSQL.
     """
-
     if DBDRIVER in ["psycopg2", "pgdb"]:
         # first open a connection the database
         # notice that postgres doesn't have createdb privileges, so
@@ -300,7 +294,7 @@ class MultiReadTest(unittest.TestCase):
                                                    db=TESTDB)
 
         self.db = self.server["biosql-test"]
-        self.db2 = self.server['biosql-test2']
+        self.db2 = self.server["biosql-test2"]
 
     def tearDown(self):
         self.server.close()
@@ -315,16 +309,13 @@ class MultiReadTest(unittest.TestCase):
         self.assertIn("biosql-test", server)
         self.assertIn("biosql-test2", server)
         self.assertEqual(2, len(server))
-        self.assertEqual(["biosql-test", 'biosql-test2'], list(server.keys()))
+        self.assertEqual(["biosql-test", "biosql-test2"], list(server.keys()))
         # Check we can delete the namespace...
         del server["biosql-test"]
         del server["biosql-test2"]
         self.assertEqual(0, len(server))
-        try:
+        with self.assertRaises(KeyError):
             del server["non-existant-name"]
-            assert False, "Should have raised KeyError"
-        except KeyError:
-            pass
 
     def test_get_db_items(self):
         """Check list, keys, length etc."""
@@ -337,33 +328,22 @@ class MultiReadTest(unittest.TestCase):
         self.assertEqual(length, len(list(db.items())))
         self.assertEqual(length, len(list(db.keys())))
         self.assertEqual(length, len(list(db.values())))
-        if sys.version_info[0] == 2:
-            # Check legacy methods for Python 2 as well:
-            self.assertEqual(length, len(list(db.iteritems())))
-            self.assertEqual(length, len(list(db.iterkeys())))
-            self.assertEqual(length, len(list(db.itervalues())))
         for (k1, r1), (k2, r2) in zip(zip(keys, items), db.items()):
             self.assertEqual(k1, k2)
             self.assertEqual(r1.id, r2.id)
         for k in keys:
             del db[k]
         self.assertEqual(0, len(db))
-        try:
+        with self.assertRaises(KeyError):
             del db["non-existant-name"]
-            assert False, "Should have raised KeyError"
-        except KeyError:
-            pass
 
     def test_cross_retrieval_of_items(self):
         """Test that valid ids can't be retrieved between namespaces."""
         db = self.db
         db2 = self.db2
         for db2_id in db2.keys():
-            try:
+            with self.assertRaises(KeyError):
                 rec = db[db2_id]
-                assert False, "Should have raised KeyError"
-            except KeyError:
-                pass
 
 
 class ReadTest(unittest.TestCase):
@@ -398,11 +378,8 @@ class ReadTest(unittest.TestCase):
         # Check we can delete the namespace...
         del server["biosql-test"]
         self.assertEqual(0, len(server))
-        try:
+        with self.assertRaises(KeyError):
             del server["non-existant-name"]
-            assert False, "Should have raised KeyError"
-        except KeyError:
-            pass
 
     def test_get_db_items(self):
         """Check list, keys, length etc."""
@@ -420,11 +397,8 @@ class ReadTest(unittest.TestCase):
         for k in keys:
             del db[k]
         self.assertEqual(0, len(db))
-        try:
+        with self.assertRaises(KeyError):
             del db["non-existant-name"]
-            assert False, "Should have raised KeyError"
-        except KeyError:
-            pass
 
     def test_lookup_items(self):
         """Test retrieval of items using various ids."""
@@ -473,17 +447,17 @@ class SeqInterfaceTest(unittest.TestCase):
     def test_seq_record(self):
         """Make sure SeqRecords from BioSQL implement the right interface."""
         test_record = self.item
-        self.assertTrue(isinstance(test_record.seq, BioSeq.DBSeq))
+        self.assertIsInstance(test_record.seq, BioSeq.DBSeq)
         self.assertEqual(test_record.id, "X62281.1", test_record.id)
         self.assertEqual(test_record.name, "ATKIN2")
         self.assertEqual(test_record.description, "A.thaliana kin2 gene")
-        self.assertTrue(hasattr(test_record, 'annotations'))
+        self.assertTrue(hasattr(test_record, "annotations"))
         # XXX should do something with annotations once they are like
         # a dictionary
         for feature in test_record.features:
-            self.assertTrue(isinstance(feature, SeqFeature))
+            self.assertIsInstance(feature, SeqFeature)
         # shouldn't cause any errors!
-        self.assertTrue(isinstance(str(test_record), basestring))
+        self.assertIsInstance(str(test_record), str)
         # Confirm can delete annotations etc to test these properties
         del test_record.annotations
         del test_record.dbxrefs
@@ -494,7 +468,7 @@ class SeqInterfaceTest(unittest.TestCase):
         """Make sure Seqs from BioSQL implement the right interface."""
         test_seq = self.item.seq
         alphabet = test_seq.alphabet
-        self.assertTrue(isinstance(alphabet, Alphabet.Alphabet))
+        self.assertIsInstance(alphabet, Alphabet.Alphabet)
         data = test_seq.data
         self.assertEqual(type(data), type(""))
         string_rep = str(test_seq)
@@ -516,12 +490,12 @@ class SeqInterfaceTest(unittest.TestCase):
         other = test_seq.toseq()
         self.assertEqual(str(test_seq), str(other))
         self.assertEqual(test_seq.alphabet, other.alphabet)
-        self.assertTrue(isinstance(other, Seq))
+        self.assertIsInstance(other, Seq)
 
         other = test_seq.tomutable()
         self.assertEqual(str(test_seq), str(other))
         self.assertEqual(test_seq.alphabet, other.alphabet)
-        self.assertTrue(isinstance(other, MutableSeq))
+        self.assertIsInstance(other, MutableSeq)
 
     def test_addition(self):
         """Check can add DBSeq objects together."""
@@ -532,7 +506,7 @@ class SeqInterfaceTest(unittest.TestCase):
                       test_seq]:
             test = test_seq + other
             self.assertEqual(str(test), str(test_seq) + str(other))
-            self.assertTrue(isinstance(test, Seq))
+            self.assertIsInstance(test, Seq)
             test = other + test_seq
             self.assertEqual(str(test), str(other) + str(test_seq))
 
@@ -542,22 +516,22 @@ class SeqInterfaceTest(unittest.TestCase):
         alphabet = test_seq.alphabet
         tripled = test_seq * 3
         # Test DBSeq.__mul__
-        self.assertTrue(isinstance(tripled, Seq))
-        self.assertFalse(isinstance(tripled, BioSeq.DBSeq))
+        self.assertIsInstance(tripled, Seq)
+        self.assertNotIsInstance(tripled, BioSeq.DBSeq)
         self.assertEqual(tripled, str(test_seq) * 3)
         self.assertEqual(tripled.alphabet, alphabet)
         # Test DBSeq.__rmul__
         tripled = 3 * test_seq
-        self.assertTrue(isinstance(tripled, Seq))
-        self.assertFalse(isinstance(tripled, BioSeq.DBSeq))
+        self.assertIsInstance(tripled, Seq)
+        self.assertNotIsInstance(tripled, BioSeq.DBSeq)
         self.assertEqual(tripled, str(test_seq) * 3)
         self.assertEqual(tripled.alphabet, alphabet)
         # Test DBSeq.__imul__
         original = self.item.seq
         tripled = test_seq
         tripled *= 3
-        self.assertTrue(isinstance(tripled, Seq))
-        self.assertFalse(isinstance(tripled, BioSeq.DBSeq))
+        self.assertIsInstance(tripled, Seq)
+        self.assertNotIsInstance(tripled, BioSeq.DBSeq)
         self.assertEqual(tripled, str(original) * 3)
         self.assertEqual(tripled.alphabet, alphabet)
 
@@ -565,23 +539,23 @@ class SeqInterfaceTest(unittest.TestCase):
         """Check that slices of sequences are retrieved properly."""
         test_seq = self.item.seq
         new_seq = test_seq[:10]
-        self.assertTrue(isinstance(new_seq, BioSeq.DBSeq))
+        self.assertIsInstance(new_seq, BioSeq.DBSeq)
         # simple slicing
-        self.assertEqual(str(test_seq[:5]), 'ATTTG')
-        self.assertEqual(str(test_seq[0:5]), 'ATTTG')
-        self.assertEqual(str(test_seq[2:3]), 'T')
-        self.assertEqual(str(test_seq[2:4]), 'TT')
-        self.assertEqual(str(test_seq[870:]), 'TTGAATTATA')
+        self.assertEqual(str(test_seq[:5]), "ATTTG")
+        self.assertEqual(str(test_seq[0:5]), "ATTTG")
+        self.assertEqual(str(test_seq[2:3]), "T")
+        self.assertEqual(str(test_seq[2:4]), "TT")
+        self.assertEqual(str(test_seq[870:]), "TTGAATTATA")
         # getting more fancy
-        self.assertEqual(test_seq[-1], 'A')
-        self.assertEqual(test_seq[1], 'T')
+        self.assertEqual(test_seq[-1], "A")
+        self.assertEqual(test_seq[1], "T")
         self.assertEqual(str(test_seq[-10:][5:]), "TTATA")
         self.assertEqual(str(test_seq[-10:][5:]), "TTATA")
 
     def test_record_slicing(self):
         """Check that slices of DBSeqRecord are retrieved properly."""
         new_rec = self.item[400:]
-        self.assertTrue(isinstance(new_rec, SeqRecord))
+        self.assertIsInstance(new_rec, SeqRecord)
         self.assertEqual(len(new_rec), 480)
         self.assertEqual(len(new_rec.features), 5)
 
@@ -599,7 +573,7 @@ class SeqInterfaceTest(unittest.TestCase):
             self.assertEqual(cds_feature.qualifiers["codon_start"], ["1"])
         except KeyError:
             raise KeyError("Missing expected entries, have %s"
-                           % repr(cds_feature.qualifiers))
+                           % repr(cds_feature.qualifiers)) from None
 
         self.assertIn("db_xref", cds_feature.qualifiers)
         multi_ann = cds_feature.qualifiers["db_xref"]
@@ -655,10 +629,10 @@ class LoaderTest(unittest.TestCase):
             item_ids.append(item.id)
         item_names.sort()
         item_ids.sort()
-        self.assertEqual(item_names, ['AF297471', 'ARU237582', 'ATCOR66M',
-                                      'ATKIN2', 'BNAKINI', 'BRRBIF72'])
-        self.assertEqual(item_ids, ['AF297471.1', 'AJ237582.1', 'L31939.1',
-                                    'M81224.1', 'X55053.1', 'X62281.1'])
+        self.assertEqual(item_names, ["AF297471", "ARU237582", "ATCOR66M",
+                                      "ATKIN2", "BNAKINI", "BRRBIF72"])
+        self.assertEqual(item_ids, ["AF297471.1", "AJ237582.1", "L31939.1",
+                                    "M81224.1", "X55053.1", "X62281.1"])
 
 
 class DeleteTest(unittest.TestCase):
@@ -693,11 +667,8 @@ class DeleteTest(unittest.TestCase):
         # Check we can delete the namespace...
         del server["biosql-test"]
         self.assertEqual(0, len(server))
-        try:
+        with self.assertRaises(KeyError):
             del server["non-existant-name"]
-            assert False, "Should have raised KeyError"
-        except KeyError:
-            pass
 
     def test_del_db_items(self):
         """Check all associated data is deleted from an item."""
@@ -755,6 +726,7 @@ class DupLoadTest(unittest.TestCase):
             # Note we don't do a specific exception handler because the
             # exception class will depend on which DB back end is in use.
             self.assertTrue(err.__class__.__name__ in ["IntegrityError",
+                                                       "UniqueViolation",
                                                        "AttributeError",
                                                        "OperationalError"],
                             err.__class__.__name__)
@@ -772,6 +744,7 @@ class DupLoadTest(unittest.TestCase):
         except Exception as err:
             # Good!
             self.assertTrue(err.__class__.__name__ in ["IntegrityError",
+                                                       "UniqueViolation",
                                                        "AttributeError"],
                             err.__class__.__name__)
             return
@@ -788,6 +761,7 @@ class DupLoadTest(unittest.TestCase):
         except Exception as err:
             # Good!
             self.assertTrue(err.__class__.__name__ in ["IntegrityError",
+                                                       "UniqueViolation",
                                                        "AttributeError"],
                             err.__class__.__name__)
             return
@@ -807,7 +781,7 @@ class ClosedLoopTest(unittest.TestCase):
         """From GenBank file to BioSQL and back to a GenBank file, NC_005816."""
         with warnings.catch_warnings():
             # BiopythonWarning: order location operators are not fully supported
-            warnings.simplefilter('ignore', BiopythonWarning)
+            warnings.simplefilter("ignore", BiopythonWarning)
             self.loop("GenBank/NC_005816.gb", "gb")
 
     def test_NC_000932(self):
@@ -822,7 +796,7 @@ class ClosedLoopTest(unittest.TestCase):
         """From GenBank file to BioSQL and back to a GenBank file, protein_refseq2."""
         with warnings.catch_warnings():
             # BiopythonWarning: order location operators are not fully supported
-            warnings.simplefilter('ignore', BiopythonWarning)
+            warnings.simplefilter("ignore", BiopythonWarning)
             self.loop("GenBank/protein_refseq2.gb", "gb")
 
     def test_no_ref(self):
@@ -889,7 +863,7 @@ class TransferTest(unittest.TestCase):
         """From GenBank file to BioSQL, then again to a new namespace, NC_005816."""
         with warnings.catch_warnings():
             # BiopythonWarning: order location operators are not fully supported
-            warnings.simplefilter('ignore', BiopythonWarning)
+            warnings.simplefilter("ignore", BiopythonWarning)
             self.trans("GenBank/NC_005816.gb", "gb")
 
     def test_NC_000932(self):
@@ -904,7 +878,7 @@ class TransferTest(unittest.TestCase):
         """From GenBank file to BioSQL, then again to a new namespace, protein_refseq2."""
         with warnings.catch_warnings():
             # BiopythonWarning: order location operators are not fully supported
-            warnings.simplefilter('ignore', BiopythonWarning)
+            warnings.simplefilter("ignore", BiopythonWarning)
             self.trans("GenBank/protein_refseq2.gb", "gb")
 
     def test_no_ref(self):
@@ -987,9 +961,8 @@ class InDepthLoadTest(unittest.TestCase):
     def test_reload(self):
         """Make sure can't reimport existing records."""
         gb_file = os.path.join(os.getcwd(), "GenBank", "cor6_6.gb")
-        gb_handle = open(gb_file, "r")
-        record = next(SeqIO.parse(gb_handle, "gb"))
-        gb_handle.close()
+        with open(gb_file) as gb_handle:
+            record = next(SeqIO.parse(gb_handle, "gb"))
         # Should be in database already...
         db_record = self.db.lookup(accession="X55053")
         self.assertEqual(db_record.id, record.id)
@@ -1002,6 +975,7 @@ class InDepthLoadTest(unittest.TestCase):
         except Exception as err:
             # Good!
             self.assertTrue(err.__class__.__name__ in ["IntegrityError",
+                                                       "UniqueViolation",
                                                        "AttributeError"],
                             err.__class__.__name__)
             return
@@ -1013,15 +987,15 @@ class InDepthLoadTest(unittest.TestCase):
         self.assertEqual(test_record.name, "ATCOR66M")
         self.assertEqual(test_record.id, "X55053.1")
         self.assertEqual(test_record.description, "A.thaliana cor6.6 mRNA")
-        self.assertTrue(isinstance(test_record.seq.alphabet, Alphabet.DNAAlphabet))
-        self.assertEqual(str(test_record.seq[:10]), 'AACAAAACAC')
+        self.assertIsInstance(test_record.seq.alphabet, Alphabet.DNAAlphabet)
+        self.assertEqual(str(test_record.seq[:10]), "AACAAAACAC")
 
         test_record = self.db.lookup(accession="X62281")
         self.assertEqual(test_record.name, "ATKIN2")
         self.assertEqual(test_record.id, "X62281.1")
         self.assertEqual(test_record.description, "A.thaliana kin2 gene")
-        self.assertTrue(isinstance(test_record.seq.alphabet, Alphabet.DNAAlphabet))
-        self.assertEqual(str(test_record.seq[:10]), 'ATTTGGCCTA')
+        self.assertIsInstance(test_record.seq.alphabet, Alphabet.DNAAlphabet)
+        self.assertEqual(str(test_record.seq[:10]), "ATTTGGCCTA")
 
     def test_seq_feature(self):
         """In depth check that SeqFeatures are transmitted through the db."""
@@ -1139,75 +1113,75 @@ class AutoSeqIOTests(unittest.TestCase):
                     compare_record(record, db_rec)
 
             if "gi" in record.annotations:
-                key = record.annotations['gi']
+                key = record.annotations["gi"]
                 if key != record.id:
                     # print(" - Retrieving by GI '%s'," % key)
                     db_rec = db.lookup(primary_id=key)
                     compare_record(record, db_rec)
 
     def test_SeqIO_loading(self):
-        self.check('fasta', 'Fasta/lupine.nu')
-        self.check('fasta', 'Fasta/elderberry.nu')
-        self.check('fasta', 'Fasta/phlox.nu')
-        self.check('fasta', 'Fasta/centaurea.nu')
-        self.check('fasta', 'Fasta/wisteria.nu')
-        self.check('fasta', 'Fasta/sweetpea.nu')
-        self.check('fasta', 'Fasta/lavender.nu')
-        self.check('fasta', 'Fasta/aster.pro')
-        self.check('fasta', 'Fasta/loveliesbleeding.pro')
-        self.check('fasta', 'Fasta/rose.pro')
-        self.check('fasta', 'Fasta/rosemary.pro')
-        self.check('fasta', 'Fasta/f001')
-        self.check('fasta', 'Fasta/f002', 3)
-        self.check('fasta', 'Fasta/fa01', 2)
-        self.check('fasta', 'GFF/NC_001802.fna')
-        self.check('fasta', 'GFF/multi.fna', 3)
-        self.check('fasta', 'Registry/seqs.fasta', 2)
-        self.check('swiss', 'SwissProt/sp001')
-        self.check('swiss', 'SwissProt/sp002')
-        self.check('swiss', 'SwissProt/sp003')
-        self.check('swiss', 'SwissProt/sp004')
-        self.check('swiss', 'SwissProt/sp005')
-        self.check('swiss', 'SwissProt/sp006')
-        self.check('swiss', 'SwissProt/sp007')
-        self.check('swiss', 'SwissProt/sp008')
-        self.check('swiss', 'SwissProt/sp009')
-        self.check('swiss', 'SwissProt/sp010')
-        self.check('swiss', 'SwissProt/sp011')
-        self.check('swiss', 'SwissProt/sp012')
-        self.check('swiss', 'SwissProt/sp013')
-        self.check('swiss', 'SwissProt/sp014')
-        self.check('swiss', 'SwissProt/sp015')
-        self.check('swiss', 'SwissProt/sp016')
-        self.check('swiss', 'Registry/EDD_RAT.dat')
-        self.check('genbank', 'GenBank/noref.gb')
-        self.check('genbank', 'GenBank/cor6_6.gb', 6)
-        self.check('genbank', 'GenBank/iro.gb')
-        self.check('genbank', 'GenBank/pri1.gb')
-        self.check('genbank', 'GenBank/arab1.gb')
+        self.check("fasta", "Fasta/lupine.nu")
+        self.check("fasta", "Fasta/elderberry.nu")
+        self.check("fasta", "Fasta/phlox.nu")
+        self.check("fasta", "Fasta/centaurea.nu")
+        self.check("fasta", "Fasta/wisteria.nu")
+        self.check("fasta", "Fasta/sweetpea.nu")
+        self.check("fasta", "Fasta/lavender.nu")
+        self.check("fasta", "Fasta/aster.pro")
+        self.check("fasta", "Fasta/loveliesbleeding.pro")
+        self.check("fasta", "Fasta/rose.pro")
+        self.check("fasta", "Fasta/rosemary.pro")
+        self.check("fasta", "Fasta/f001")
+        self.check("fasta", "Fasta/f002", 3)
+        self.check("fasta", "Fasta/fa01", 2)
+        self.check("fasta", "GFF/NC_001802.fna")
+        self.check("fasta", "GFF/multi.fna", 3)
+        self.check("fasta", "Registry/seqs.fasta", 2)
+        self.check("swiss", "SwissProt/sp001")
+        self.check("swiss", "SwissProt/sp002")
+        self.check("swiss", "SwissProt/sp003")
+        self.check("swiss", "SwissProt/P0A186.txt")
+        self.check("swiss", "SwissProt/sp005")
+        self.check("swiss", "SwissProt/sp006")
+        self.check("swiss", "SwissProt/sp007")
+        self.check("swiss", "SwissProt/sp008")
+        self.check("swiss", "SwissProt/sp009")
+        self.check("swiss", "SwissProt/sp010")
+        self.check("swiss", "SwissProt/sp011")
+        self.check("swiss", "SwissProt/sp012")
+        self.check("swiss", "SwissProt/sp013")
+        self.check("swiss", "SwissProt/P60137.txt")
+        self.check("swiss", "SwissProt/sp015")
+        self.check("swiss", "SwissProt/sp016")
+        self.check("swiss", "Registry/EDD_RAT.dat")
+        self.check("genbank", "GenBank/noref.gb")
+        self.check("genbank", "GenBank/cor6_6.gb", 6)
+        self.check("genbank", "GenBank/iro.gb")
+        self.check("genbank", "GenBank/pri1.gb")
+        self.check("genbank", "GenBank/arab1.gb")
         with warnings.catch_warnings():
             # BiopythonWarning: order location operators are not fully
             # supported
             warnings.simplefilter("ignore", BiopythonWarning)
-            self.check('genbank', 'GenBank/protein_refseq2.gb')
-        self.check('genbank', 'GenBank/extra_keywords.gb')
-        self.check('genbank', 'GenBank/one_of.gb')
-        self.check('genbank', 'GenBank/NT_019265.gb')
-        self.check('genbank', 'GenBank/origin_line.gb')
-        self.check('genbank', 'GenBank/blank_seq.gb')
+            self.check("genbank", "GenBank/protein_refseq2.gb")
+        self.check("genbank", "GenBank/extra_keywords.gb")
+        self.check("genbank", "GenBank/one_of.gb")
+        self.check("genbank", "GenBank/NT_019265.gb")
+        self.check("genbank", "GenBank/origin_line.gb")
+        self.check("genbank", "GenBank/blank_seq.gb")
         with warnings.catch_warnings():
             # BiopythonWarning: bond location operators are not fully supported
             warnings.simplefilter("ignore", BiopythonWarning)
-            self.check('genbank', 'GenBank/dbsource_wrap.gb')
+            self.check("genbank", "GenBank/dbsource_wrap.gb")
             # BiopythonWarning: order location operators are not fully
             # supported
-            self.check('genbank', 'GenBank/NC_005816.gb')
-        self.check('genbank', 'GenBank/gbvrl1_start.seq', 3)
-        self.check('genbank', 'GFF/NC_001422.gbk')
-        self.check('embl', 'EMBL/TRBG361.embl')
-        self.check('embl', 'EMBL/DD231055_edited.embl')
-        self.check('embl', 'EMBL/SC10H5.embl')
-        self.check('embl', 'EMBL/U87107.embl')
+            self.check("genbank", "GenBank/NC_005816.gb")
+        self.check("genbank", "GenBank/gbvrl1_start.seq", 3)
+        self.check("genbank", "GFF/NC_001422.gbk")
+        self.check("embl", "EMBL/TRBG361.embl")
+        self.check("embl", "EMBL/DD231055_edited.embl")
+        self.check("embl", "EMBL/SC10H5.embl")
+        self.check("embl", "EMBL/U87107.embl")
         self.assertEqual(len(self.db), 66)
 
 
@@ -1233,15 +1207,15 @@ class SwissProtUnknownPositionTest(unittest.TestCase):
 
     def test_ambiguous_location(self):
         """Loaded uniprot-xml with ambiguous location in BioSQL."""
-        id = 'P97881'
+        id = "P97881"
         seqiter = SeqIO.parse("SwissProt/%s.xml" % id, "uniprot-xml")
         self.assertTrue(self.db.load(seqiter) == 1)
 
         dbrecord = self.db.lookup(primary_id=id)
         for feature in dbrecord.features:
-            if feature.type == 'signal peptide':
-                self.assertTrue(isinstance(feature.location.end, UnknownPosition))
-            elif feature.type == 'chain':
-                self.assertTrue(isinstance(feature.location.start, UnknownPosition))
+            if feature.type == "signal peptide":
+                self.assertIsInstance(feature.location.end, UnknownPosition)
+            elif feature.type == "chain":
+                self.assertIsInstance(feature.location.start, UnknownPosition)
             else:
-                self.assertTrue(isinstance(feature.location.start, ExactPosition))
+                self.assertIsInstance(feature.location.start, ExactPosition)

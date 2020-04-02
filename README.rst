@@ -4,18 +4,15 @@
 .. image:: https://img.shields.io/conda/vn/conda-forge/biopython.svg
    :alt: Biopython on the Conda package conda-forge channel
    :target: https://anaconda.org/conda-forge/biopython
-.. image:: https://img.shields.io/travis/biopython/biopython/master.svg
+.. image:: https://img.shields.io/travis/biopython/biopython/master.svg?logo=travis
    :alt: Linux testing with TravisCI
    :target: https://travis-ci.org/biopython/biopython/branches
-.. image:: https://img.shields.io/appveyor/ci/biopython/biopython/master.svg
+.. image:: https://img.shields.io/appveyor/ci/biopython/biopython/master.svg?logo=appveyor
    :alt: Windows testing with AppVeyor
    :target: https://ci.appveyor.com/project/biopython/biopython/history
 .. image:: https://img.shields.io/codecov/c/github/biopython/biopython/master.svg
    :alt: TravisCI test coverage
    :target: https://codecov.io/github/biopython/biopython/
-.. image:: https://landscape.io/github/biopython/biopython/master/landscape.svg?style=flat
-   :alt: Landscape Code Metrics
-   :target: https://landscape.io/github/biopython/biopython
 .. image:: http://depsy.org/api/package/pypi/biopython/badge.svg
    :alt: Research software impact on Depsy
    :target: http://depsy.org/package/python/biopython
@@ -80,31 +77,17 @@ install Biopython yourself. This is described below.
 Python Requirements
 ===================
 
-We currently recommend using Python 3.6 from http://www.python.org
+We currently recommend using Python 3.8 from http://www.python.org
 
 Biopython is currently supported and tested on the following Python
 implementations:
 
-- Python 2.7, 3.4, 3.5, 3.6 -- see http://www.python.org
+- Python 3.6, 3.7, 3.8 -- see http://www.python.org
 
-  Python 3 is the primary development platform for Biopython. We will drop
-  support for Python 2.7 no later than 2020, in line with the end-of-life or
-  sunset date for Python 2.7 itself.
+- PyPy3.5 v7.1.1 -- see http://www.pypy.org
 
-- PyPy2.7 v6.0.0, or PyPy3.5 v6.0.0 -- see http://www.pypy.org
-
-  Aside from ``Bio.trie`` (which does not compile as ``marshal.h`` is
-  currently missing under PyPy), everything should work. Older versions
-  of PyPy mostly work too.
-
-- Jython 2.7 -- see http://www.jython.org
-
-  We have decided to deprecate support for Jython, but aside from
-  ``Bio.Restriction``, modules with C code, or dependent on SQLite3 or NumPy,
-  everything should work. There are some known issues with test failures
-  which have not yet been resolved.
-
-Biopython 1.68 was our final release to support Python 2.6.
+Biopython 1.68 was our final release to support Python 2.6, while Biopython
+1.76 was our final release to support Python 2.7.
 
 
 Optional Dependencies
@@ -138,14 +121,11 @@ other optional Python dependencies, which can be installed later if needed:
 
 - MySQL Connector/Python, see http://dev.mysql.com/downloads/connector/python/
   This package is used by ``BioSQL`` to access a MySQL database, and is
-  supported on Python 2 and 3 and PyPy too.
+  supported on PyPy too.
 
-- MySQLdb, see http://sourceforge.net/projects/mysql-python (optional)
-  This is an older alternative package used by ``BioSQL`` to access a MySQL
-  database, but it is not available for Python 3 or PyPy.
-
-Note that some of these libraries are not available for PyPy or Jython,
-and not all are available for Python 3 yet either.
+- mysqlclient, see https://github.com/PyMySQL/mysqlclient-python (optional)
+  This is a fork of the older MySQLdb and is used by ``BioSQL`` to access a
+  MySQL database. It is supported by PyPy.
 
 In addition there are a number of useful third party tools you may wish to
 install such as standalone NCBI BLAST, EMBOSS or ClustalW.
@@ -158,9 +138,8 @@ We recommend using the pre-compiled binary wheels available on PyPI using::
 
     pip install biopython
 
-However, if you need to compile Biopython yourself, the following are
-required at compile time - unless you are using Jython (support for which is
-deprecated).
+However, if you need to compile Biopython yourself, the following are required
+at compile time:
 
 - Python including development header files like ``python.h``, which on Linux
   are often not installed by default (trying looking for and installing a
@@ -183,15 +162,16 @@ Now change directory to the Biopython source code folder and run::
     python setup.py test
     sudo python setup.py install
 
-Substitute ``python`` with your specific version, for example ``python3``,
-``pypy`` or ``jython``.
+Substitute ``python`` with your specific version if required, for example
+``python3``, or ``pypy3``.
 
-If you need to do additional configuration, e.g. changing the install
-directory prefix, please type ``python setup.py``, or see the documentation
-here:
+To exlude tests that require an internet connection (and which may take a long
+time), use the ``--offline`` option::
 
-* HTML - http://biopython.org/DIST/docs/install/Installation.html
-* PDF - http://biopython.org/DIST/docs/install/Installation.pdf
+    python setup.py test --offline
+
+If you need to do additional configuration, e.g. changing the install directory
+prefix, please type ``python setup.py``.
 
 
 Testing
@@ -204,6 +184,11 @@ directory and type::
     python setup.py build
     python setup.py test
 
+If you want to skip the online tests (which is recommended when doing repeated
+testing), use::
+
+    python setup.py test --offline
+
 Do not panic if you see messages warning of skipped tests::
 
     test_DocSQL ... skipping. Install MySQLdb if you want to use Bio.DocSQL.
@@ -215,7 +200,7 @@ the required dependency and re-run the tests.
 
 Some of the tests may fail due to network issues, this is often down to
 chance or a service outage. If the problem does not go away on
-re-running the tests, it is possible to run only the offline tests.
+re-running the tests, you can use the ``--offline`` option.
 
 There is more testing information in the Biopython Tutorial & Cookbook.
 
@@ -245,8 +230,7 @@ bug database and our mailing lists to see if it has already been reported
 (and hopefully fixed), and if not please do report the bug. We can't fix
 problems we don't know about ;)
 
-* Old issue tracker: https://redmine.open-bio.org/projects/biopython
-* Current issue tracker: https://github.com/biopython/biopython/issues
+Issue tracker: https://github.com/biopython/biopython/issues
 
 If you suspect the problem lies within a parser, it is likely that the data
 format has changed and broken the parsing code.  (The text BLAST and GenBank
@@ -257,9 +241,7 @@ ones in ``Bio.SeqIO`` or ``Bio.Blast``) from our git repository. However, be
 careful when doing this, because the code in github is not as well-tested
 as released code, and may contain new dependencies.
 
-Finally, you can send a bug report to the bug database or the mailing list at
-biopython@biopython.org (subscription required).  In the bug report, please
-let us know:
+In any bug report, please let us know:
 
 1. Which operating system and hardware (32 bit or 64 bit) you are using
 2. Python version
@@ -280,8 +262,10 @@ backgrounds. We are always looking for people interested in helping with code
 development, web-site management, documentation writing, technical
 administration, and whatever else comes up.
 
-If you wish to contribute, please visit the web site http://biopython.org
-and join our mailing list: http://biopython.org/wiki/Mailing_lists
+If you wish to contribute, please first read `CONTRIBUTING.rst
+<https://github.com/biopython/biopython/blob/master/CONTRIBUTING.rst>`_ here,
+visit our web site http://biopython.org and join our mailing list:
+http://biopython.org/wiki/Mailing_lists
 
 
 Distribution Structure
@@ -292,9 +276,10 @@ Distribution Structure
 - ``LICENSE.rst`` -- What you can do with the code.
 - ``CONTRIB.rst`` -- An (incomplete) list of people who helped Biopython in
   one way or another.
-- ``DEPRECATED.rst`` -- Contains information about modules in Biopython that are
-  removed or no longer recommended for use, and how to update code that uses
-  those modules.
+- ``CONTRIBUTING.rst`` -- An overview about how to contribute to Biopython.
+- ``DEPRECATED.rst`` -- Contains information about modules in Biopython that
+  were removed or no longer recommended for use, and how to update code that
+  uses those modules.
 - ``MANIFEST.in`` -- Configures which files to include in releases.
 - ``setup.py``    -- Installation file.
 - ``Bio/``        -- The main code base code.

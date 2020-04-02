@@ -11,7 +11,6 @@ See also the Bio.Sequencing.Ace module which offers more than just accessing
 the contig consensus sequences in an ACE file as SeqRecord objects.
 """
 
-from __future__ import print_function
 
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -19,7 +18,7 @@ from Bio.Alphabet import generic_nucleotide, generic_dna, generic_rna, Gapped
 from Bio.Sequencing import Ace
 
 
-def AceIterator(handle):
+def AceIterator(source):
     """Return SeqRecord objects from an ACE file.
 
     This uses the Bio.Sequencing.Ace module to do the hard work.  Note that
@@ -32,7 +31,7 @@ def AceIterator(handle):
     letter_annotations dictionary under the "phred_quality" key.
 
     >>> from Bio import SeqIO
-    >>> with open("Ace/consed_sample.ace", "rU") as handle:
+    >>> with open("Ace/consed_sample.ace") as handle:
     ...     for record in SeqIO.parse(handle, "ace"):
     ...         print("%s %s... %i" % (record.id, record.seq[:10], len(record)))
     ...         print(max(record.letter_annotations["phred_quality"]))
@@ -47,7 +46,7 @@ def AceIterator(handle):
     prevented output of the gapped sequence as FASTQ format.
 
     >>> from Bio import SeqIO
-    >>> with open("Ace/contig1.ace", "rU") as handle:
+    >>> with open("Ace/contig1.ace") as handle:
     ...     for record in SeqIO.parse(handle, "ace"):
     ...         print("%s ...%s..." % (record.id, record.seq[85:95]))
     ...         print(record.letter_annotations["phred_quality"][85:95])
@@ -60,7 +59,7 @@ def AceIterator(handle):
     90
 
     """
-    for ace_contig in Ace.parse(handle):
+    for ace_contig in Ace.parse(source):
         # Convert the ACE contig record into a SeqRecord...
         consensus_seq_str = ace_contig.sequence
         # Assume its DNA unless there is a U in it,
@@ -77,8 +76,9 @@ def AceIterator(handle):
             # For consistency with most other file formats, map
             # any * gaps into - gaps.
             assert "-" not in consensus_seq_str
-            consensus_seq = Seq(consensus_seq_str.replace("*", "-"),
-                                Gapped(alpha, gap_char="-"))
+            consensus_seq = Seq(
+                consensus_seq_str.replace("*", "-"), Gapped(alpha, gap_char="-")
+            )
         else:
             consensus_seq = Seq(consensus_seq_str, alpha)
 
@@ -89,9 +89,7 @@ def AceIterator(handle):
         # TODO - Supporting reads (RD lines, plus perhaps QA and DS lines)
         # Perhaps as SeqFeature objects?
 
-        seq_record = SeqRecord(consensus_seq,
-                               id=ace_contig.name,
-                               name=ace_contig.name)
+        seq_record = SeqRecord(consensus_seq, id=ace_contig.name, name=ace_contig.name)
 
         # Consensus base quality (BQ lines).  Note that any gaps (originally
         # as * characters) in the consensus do not get a quality entry, so
@@ -114,4 +112,5 @@ def AceIterator(handle):
 
 if __name__ == "__main__":
     from Bio._utils import run_doctest
+
     run_doctest()
